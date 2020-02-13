@@ -3,6 +3,15 @@ from selenium import webdriver
 import time
 
 
+class Experience:
+
+    def __init__(self):
+        self.uuid = ""
+        self.title = ""
+        self.classification = ""
+        self.description = ""
+
+
 class ScrapeSite:
     """
     ScrapeSite handles all of the site scraping and cleaning
@@ -86,11 +95,4 @@ class ScrapeSite:
 
         # return the beautiful soup object.
         return bs_content
-
-class Experience:
-
-    def __init__(self):
-        self.title = ""
-        self.classification = ""
-        self.description = ""
 
