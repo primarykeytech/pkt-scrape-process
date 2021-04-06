@@ -4,7 +4,10 @@ import time
 
 
 class Experience:
-
+    """
+    Objects created with the Experience class will be used
+    to save the content in DynamoDB.
+    """
     def __init__(self):
         self.uuid = ""
         self.title = ""
@@ -70,9 +73,15 @@ class ScrapeSite:
         return links_return
 
     def get_page_content(self, url):
+        """
+        Scrapes all of the HTML from a specified URL.
+        :param url: The full URL of the page.
+        :return: A BeautifulSoup object.
+        """
 
         # string to hold response from scraping.
         scrape_response = ""
+
         # content parsed into beautiful soup.
         bs_content = ""
 

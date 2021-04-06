@@ -8,7 +8,14 @@ import cfg
 
 
 def create_experience_obj(bs_content):
+    """
+    Takes an input HTML string and turns it into an Experience
+    object. This will likely need to be changed depending on the
+    source of the scraped data.
 
+    :param bs_content: HTML string.
+    :return: Experience object.
+    """
     # create experience obj
     objExp = Experience()
 
@@ -42,6 +49,12 @@ def create_experience_obj(bs_content):
 
 
 def scrape_experiences():
+    """
+    Scrapes the content from the specified url. This function
+    will likely need to be adjusted depending on the source
+    of your data. Saves the scraped record in a dynamo db
+    database after creating objects from HTML strings.
+    """
 
     print("Starting the scraping process...")
 
@@ -87,3 +100,4 @@ def scrape_experiences():
 
 # start the process.
 scrape_experiences()
+

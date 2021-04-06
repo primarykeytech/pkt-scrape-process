@@ -6,11 +6,21 @@ import cfg
 
 
 class DynamoDb:
-
+    """
+    The purpose of the DynamoDb class is to handle interactions with
+    the DynamoDB database. Relies on boto3.
+    """
     def __init__(self):
         pass
 
     def create_record(self, objExp):
+        """
+        Creates a new record in Dynamo DB based on the properties
+        of the Experience object passed to it.
+
+        :param objExp: Experience object.
+        :return:
+        """
 
         # create the boto3 object.
         dynamodb = boto3.resource('dynamodb',
@@ -29,4 +39,6 @@ class DynamoDb:
             }
         )
 
-
+        # return success here.
+        # TODO: yeah, we're going to need some error trapping.
+        return True
