@@ -1,5 +1,8 @@
+"""
+
 from pktscrape.module_scraping import ScrapeSite
-import os, sys
+import os
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import cfg
 
@@ -33,3 +36,4 @@ def test_single_page_content_result():
     content = single_page_content()
     assert len(content) > 0
 
+"""
