@@ -12,6 +12,7 @@ TEST_SINGLE_PAGE_URL = \
     'https://awebsite.org/2019'
 TEST_SINGLE_PAGE_CONTENT = \
     'https://awebsite.org/2019/experience1'
+TEST_SINGLE_PAGE_CONTAINS = '/someword/'
 
 # AWS resource settings.
 AWS_REGION = 'your-region'

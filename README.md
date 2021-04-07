@@ -1,9 +1,11 @@
 # pkt-scrape-process
-There are a number of research studies that gather experiences from participants 
-and publishes them anonymously on the Internet. The purpose of this project is to 
-scrape a collection of experiences from one of these websites, save the information 
-to a NoSQL database, and then utilize Amazon AWS Elastic MapReduce to count the occurrences of a 
-list of words. The counts are then used to create a word cloud to visualize the data.
+There are a number of qualitative research studies that gather experiences from participants for 
+evaluation. The purpose of this project is to  
+scrape a collection of experiences from a websites (e.g. a thread in a forum related to the use 
+of a prescription drug), save the information 
+to a NoSQL database, and then utilize Amazon AWS Elastic MapReduce to count the occurrences of 
+words provided within a list of words. The counts are then used to create a word cloud to 
+visualize the data.
 
 Because of reasons of copyright, this demo project will not provide the website from which 
 the test was conducted. Obviously, each website used would need its own code to handle the 

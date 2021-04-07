@@ -46,7 +46,13 @@ class DynamoDb:
         return True
 
     def read_one_by_id(self, id):
+        """
+        Retrieves a single record from the dynamodb database
+        based on an id. Returns an experience object.
 
+        :param id: id of record as a string.
+        :return: Experience object.
+        """
         # object that will be returned.
         obj_return = Experience()
 
@@ -75,12 +81,12 @@ class DynamoDb:
 
     def delete_by_id(self, record_id):
 
-        # create the boto3 object.
+        # create the boto3 object and set the table.
         dynamodb = boto3.resource('dynamodb',
                                   region_name=cfg.AWS_REGION)
-
         table = dynamodb.Table(cfg.DB_TABLE)
 
+        # delete the item and get the response.
         response = table.delete_item(
             Key={
                 "id": record_id

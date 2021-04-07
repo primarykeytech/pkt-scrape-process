@@ -1,7 +1,10 @@
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
-
+import cfg
 
 class Experience:
     """
@@ -87,12 +90,25 @@ class ScrapeSite:
 
         # try to connect to the site using selenium and firefox.
         try:
+            # create the firefox driver.
             driver = webdriver.Firefox(executable_path='drivers/geckodriver')
             # seems to work better with a slight wait
-            time.sleep(3)
+            # time.sleep(3)
+
+            # get the page content.
             driver.get(url)
+
+            # see if the config file has a delay set.
+            # if there is a delay, we will be waiting for an element with a
+            # particular class name to appear.
+            if cfg.WEB_DELAY > 0:
+                WebDriverWait(driver, 20)\
+                    .until(EC.visibility_of_element_located((By.CLASS_NAME,
+                                                             cfg.WEB_ELEMENT_TO_WAIT)))
+
             # set the response.
             scrape_response = driver.page_source
+
             # parse the text with beautiful soup.
             bs_content = BeautifulSoup(scrape_response, 'html.parser')
         except:
