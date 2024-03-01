@@ -24,7 +24,7 @@ Python libraries used:
 
 You will need:
 + A Selenium-compliant driver added to a "drivers" folder. This project used a Firefox 
-driver.
+driver downloaded from [here](https://github.com/mozilla/geckodriver/releases).
 + A cfg.py file with constants set that are used for configuration and processing. sample_cfg.py 
 is provided showing the constant declarations. 
 
@@ -33,6 +33,7 @@ Steps Completed:
 + Writing to DynamoDB
 
 TODO:
++ IaC with Terraform.
 + Processing with Amazon AWS EMR.
 + Word cloud creation.
 + Final report.
