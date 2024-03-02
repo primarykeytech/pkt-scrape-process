@@ -3,8 +3,8 @@ import uuid
 from module_db import DynamoDb
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import cfg
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def create_experience_obj(bs_content):

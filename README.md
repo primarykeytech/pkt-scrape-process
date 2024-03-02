@@ -1,6 +1,6 @@
 # pkt-scrape-process
 There are a number of qualitative research studies that gather experiences from participants for 
-evaluation. The purpose of this project is to  
+evaluation. The purpose of this project is to 
 scrape a collection of experiences from a websites (e.g. a thread in a forum related to the use 
 of a prescription drug), save the information 
 to a NoSQL database, and then utilize Amazon AWS Elastic MapReduce to count the occurrences of 
