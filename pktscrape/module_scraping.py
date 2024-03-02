@@ -29,6 +29,26 @@ class ScrapeSite:
     def __init__(self):
         pass
 
+    def scrape_page(self, url):
+        """
+        Use selenium to scrape the page.
+        :param url: URL of page to scrape.
+        :return: List of links from the page.
+        """
+        # list to hold the links pulled from the page.
+        archive_links = []
+
+        # open the page with selenium.
+        with webdriver.Firefox() as driver:
+            time.sleep(3)  # seems to work better with a slight wait
+            driver.get(url)
+            scrape_response = driver.page_source
+            archive_links = BeautifulSoup(scrape_response, 'html.parser')
+            driver.quit()
+
+        # return the links.
+        return archive_links
+
     def get_page_links(self, url, must_contain = ""):
         """
         Scrapes the page specified upon. Uses
@@ -43,15 +63,8 @@ class ScrapeSite:
         # list to hold cleaned up links.
         links_return = []
 
-        archive_links = None
-
         # open the page with selenium.
-        with webdriver.Firefox() as driver:
-            time.sleep(3)
-            driver.get(url)
-            scrape_response = driver.page_source
-            archive_links = BeautifulSoup(scrape_response, 'html.parser')
-            driver.quit()
+        archive_links = self.scrape_page(url)
 
         # loop through just the links on the page.
         for link in archive_links.findAll('a', href=True):
@@ -71,7 +84,7 @@ class ScrapeSite:
 
     def get_page_content(self, url):
         """
-        Scrapes all of the HTML from a specified URL.
+        Scrapes all the HTML from a specified URL.
         :param url: The full URL of the page.
         :return: A BeautifulSoup object.
         """
