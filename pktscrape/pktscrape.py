@@ -17,13 +17,13 @@ def create_experience_obj(bs_content):
     :return: Experience object.
     """
     # create experience obj
-    objExp = Experience()
+    exp = Experience()
 
     # generate random id.
-    objExp.uuid = str(uuid.uuid1())
+    exp.uuid = str(uuid.uuid1())
 
     # extract the title.
-    objExp.title = bs_content.h1.get_text()
+    exp.title = bs_content.h1.get_text()
 
     # get li's from breadcrumbs
     list_ul = bs_content.find('ul', class_="breadcrumbs")
@@ -34,18 +34,18 @@ def create_experience_obj(bs_content):
         # extract text and clean up.
         li_text = li.get_text()
         if "Classification" in li_text:
-            objExp.classification = li_text.replace("Classification ", "")
+            exp.classification = li_text.replace("Classification ", "")
 
     # get the main content which is always in p tag with
     # left alignment.
     content_area = bs_content.find('p', {"align": "left"})
     if content_area is None:
-        objExp.description = " "
+        exp.description = " "
     else:
-        objExp.description = content_area.get_text()
+        exp.description = content_area.get_text()
 
     # return the object.
-    return objExp
+    return exp
 
 
 def scrape_experiences():
@@ -72,7 +72,7 @@ def scrape_experiences():
 
     # loop through base page links.
     # for link in top_links:
-    for link in top_links[8:]:
+    for link in top_links:
         # increment count.
         count_top += 1
 
@@ -98,6 +98,6 @@ def scrape_experiences():
             obj_db = DynamoDb()
             obj_db.create_record(obj_exp)
 
+
 # start the process.
 scrape_experiences()
-

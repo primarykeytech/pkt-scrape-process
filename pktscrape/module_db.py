@@ -1,10 +1,10 @@
 import boto3
 from boto3.dynamodb.conditions import Key
-from pktscrape.module_scraping import Experience
+from module_scraping import Experience
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import cfg
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class DynamoDb:

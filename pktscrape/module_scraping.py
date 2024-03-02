@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import cfg
 
+
 class Experience:
     """
     Objects created with the Experience class will be used
@@ -20,7 +21,7 @@ class Experience:
 
 class ScrapeSite:
     """
-    ScrapeSite handles all of the site scraping and cleaning
+    ScrapeSite handles all the site scraping and cleaning
     of data related to the scraping.
     """
     # TODO: abstract out actual scraping code.
@@ -42,21 +43,14 @@ class ScrapeSite:
         # list to hold cleaned up links.
         links_return = []
 
-        # try to connect to the site using selenium and firefox.
-        try:
-            driver = webdriver.Firefox(executable_path='drivers/geckodriver')
-            # seems to work better with a slight wait
+        archive_links = None
+
+        # open the page with selenium.
+        with webdriver.Firefox() as driver:
             time.sleep(3)
             driver.get(url)
-            # set the response.
             scrape_response = driver.page_source
-            # parse the text with beautiful soup.
             archive_links = BeautifulSoup(scrape_response, 'html.parser')
-        except:
-            # report error.
-            print("driver failed")
-        finally:
-            # close the browser window.
             driver.quit()
 
         # loop through just the links on the page.
