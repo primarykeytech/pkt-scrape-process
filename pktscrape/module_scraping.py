@@ -12,6 +12,7 @@ class Experience:
     Objects created with the Experience class will be used
     to save the content in DynamoDB.
     """
+
     def __init__(self):
         self.uuid = ""
         self.title = ""
@@ -24,12 +25,12 @@ class ScrapeSite:
     ScrapeSite handles all the site scraping and cleaning
     of data related to the scraping.
     """
-    # TODO: abstract out actual scraping code.
 
     def __init__(self):
-        pass
+        self.links = []
 
-    def scrape_page(self, url):
+    @staticmethod
+    def scrape_page(url):
         """
         Use selenium to scrape the page.
         :param url: URL of page to scrape.
@@ -49,17 +50,15 @@ class ScrapeSite:
         # return the links.
         return archive_links
 
-    def get_page_links(self, url, must_contain = ""):
+    def get_page_links(self, url, must_contain=""):
         """
         Scrapes the page specified upon. Uses
         selenium since the test site that I used had blocked
         vanilla scraping.
         :return: links contained on the base page.
         """
-        # string to hold response from scraping.
-        scrape_response = ""
-        # list to hold the links pulled from the page.
-        archive_links = []
+        print('In get_page_links...')
+
         # list to hold cleaned up links.
         links_return = []
 
@@ -68,21 +67,34 @@ class ScrapeSite:
 
         # loop through just the links on the page.
         for link in archive_links.findAll('a', href=True):
+
+            print(f'Evaluating {link}')
+
             # use value stored in config file to determine if
             # this is a link that we want. This will vary depending
             # on the page from which we scrape.
             if must_contain in link['href']:
                 # set the link.
                 the_link = link['href']
+
+                # if the link is not a full URL, add the base URL.
+                if 'http' not in the_link:
+                    the_link = cfg.HOME_URL + the_link
+
                 # check if the link is already in the list
                 # to return.
-                if the_link not in links_return:
-                    # add to the list.
-                    links_return.append(the_link)
-        # return the cleaned up list.
-        return links_return
+                if the_link not in self.links:
 
-    def get_page_content(self, url):
+                    print(f'Adding {the_link} to the list...')
+
+                    # add to the list.
+                    self.links.append(the_link)
+
+                    # recursively call this function to get the links on the page.
+                    self.get_page_links(the_link, must_contain)
+
+    @staticmethod
+    def get_page_content(url):
         """
         Scrapes all the HTML from a specified URL.
         :param url: The full URL of the page.
@@ -98,7 +110,7 @@ class ScrapeSite:
         # try to connect to the site using selenium and firefox.
         try:
             # create the firefox driver.
-            driver = webdriver.Firefox(executable_path='drivers/geckodriver')
+            driver = webdriver.Firefox()
             # seems to work better with a slight wait
             # time.sleep(3)
 
@@ -109,7 +121,7 @@ class ScrapeSite:
             # if there is a delay, we will be waiting for an element with a
             # particular class name to appear.
             if cfg.WEB_DELAY > 0:
-                WebDriverWait(driver, 20)\
+                WebDriverWait(driver, 20) \
                     .until(EC.visibility_of_element_located((By.CLASS_NAME,
                                                              cfg.WEB_ELEMENT_TO_WAIT)))
 
@@ -128,3 +140,20 @@ class ScrapeSite:
         # return the beautiful soup object.
         return bs_content
 
+    def crawl_for_links(self, url, must_contain=""):
+        """
+        Crawls the site for links.
+        :param url: The URL to use as the starting point.
+        :param must_contain: The string that must be in the link.
+        :return: A list of links from the page.
+        """
+        print("Starting crawl for links...")
+
+        # list to hold the links pulled from the page.
+        self.links = [url]
+
+        self.get_page_links(url, must_contain)
+
+        # # open the page with selenium.
+        # with webdriver.Firefox() as driver:
+        #     time.sleep(3)

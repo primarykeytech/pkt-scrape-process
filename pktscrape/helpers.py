@@ -1,3 +1,6 @@
-"""
-Nothing to see here, folks. Move along.
-"""
+import re
+
+
+def strip_html(data):
+    p = re.compile(r'<.*?>')
+    return p.sub('', data)
