@@ -8,6 +8,34 @@ import helpers
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+def extract_experience(bs_content):
+    """
+    Extracts the experience from the content of the page.
+    This will likely need to be adjusted depending on the
+    source of the scraped data.
+
+    :param bs_content: HTML string.
+    :return: Experience object.
+    """
+    list_content = []
+
+    if cfg.IDENTIFY_BY == "class":
+        list_content = bs_content.find_all('div', cfg.IDENTIFY_CONTENT)
+
+    print(f"Found {str(len(list_content))} content items.")
+
+    # list to return
+    list_return = []
+
+    # loop through list content and process text before adding to return list.
+    for item in list_content:
+
+        # extract text and clean up.
+        item_from_get_text = item.get_text(strip=True)
+        list_return.append(item_from_get_text)
+
+    return list_return
+
 def create_experience_obj(bs_content):
     """
     Takes an input HTML string and turns it into an Experience
@@ -15,7 +43,7 @@ def create_experience_obj(bs_content):
     source of the scraped data.
 
     :param bs_content: HTML string.
-    :return: Experience object.
+    :return: list of strings
     """
     # create experience obj
     exp = Experience()
@@ -39,12 +67,15 @@ def create_experience_obj(bs_content):
 
     # loop through list content and process text before adding to return list.
     for item in list_content:
+
         # extract text and clean up.
         item_from_get_text = item.get_text(strip=True)
 
         # item_text = item_text.strip()
-        print(item_from_get_text)
-        print("\n\n")
+        # print(item_from_get_text)
+        # print("\n\n")
+
+
 
 
     # # loop through list items to find classification.
@@ -136,11 +167,43 @@ def scrape_experience_alternate():
     # create the obj to begin scraping.
     obj = ScrapeSite()
 
+    # create a selenium driver to share.
+    obj.create_driver()
+
+    # crawl the site for links starting at the base page.
     obj.crawl_for_links(cfg.BASE_URL, cfg.BASE_MUST_CONTAIN)
 
     print(obj.links)
 
+    # list to hold experience objects.
+    list_exp = []
 
+    # iterate through the links and scrape the content.
+    for link in obj.links:
+
+        print(f"Scraping content from {link}...")
+        bs_content = obj.scrape_page(link)
+
+        # extract the experiences from the page content and add to the list.
+        list_exp.extend(extract_experience(bs_content))
+
+        # create the experience object.
+        # obj_exp = create_experience_obj(bs_content)
+
+        # add to the list of experience objects.
+        # list_exp.append(create_experience_obj(bs_content))
+
+
+        # # create the dynamodb object and add record.
+        # print("Adding: ", obj_exp.title)
+        # obj_db = DynamoDb()
+        # obj_db.create_record(obj_exp)
+
+    # close the driver.
+    obj.quit_driver()
+    print(f"Scraped {str(len(list_exp))} experience objects.")
+
+    # loop through the list of experience objects and save to dynamodb.
 
     # get the links from the base page.
     print("Getting base page links...")
