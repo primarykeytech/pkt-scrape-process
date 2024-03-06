@@ -4,7 +4,7 @@ from module_db import DynamoDb
 import os
 import sys
 import cfg
-import helpers
+import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -35,6 +35,7 @@ def extract_experience(bs_content):
         list_return.append(item_from_get_text)
 
     return list_return
+
 
 def create_experience_obj(bs_content):
     """
@@ -187,64 +188,35 @@ def scrape_experience_alternate():
         # extract the experiences from the page content and add to the list.
         list_exp.extend(extract_experience(bs_content))
 
-        # create the experience object.
-        # obj_exp = create_experience_obj(bs_content)
-
-        # add to the list of experience objects.
-        # list_exp.append(create_experience_obj(bs_content))
-
-
-        # # create the dynamodb object and add record.
-        # print("Adding: ", obj_exp.title)
-        # obj_db = DynamoDb()
-        # obj_db.create_record(obj_exp)
-
     # close the driver.
     obj.quit_driver()
     print(f"Scraped {str(len(list_exp))} experience objects.")
 
-    # loop through the list of experience objects and save to dynamodb.
+    # list for experience objects.
+    list_exp_obj = []
 
-    # get the links from the base page.
-    print("Getting base page links...")
-    # top_links = obj.get_page_links(cfg.BASE_URL,
-    #                                cfg.BASE_MUST_CONTAIN)
-    # # include the base page.
-    # top_links.append(cfg.BASE_URL)
-    # print("Retrieved ", str(len(top_links)), " base page links.")
-    #
-    # # to count which link we are on.
-    # count_top = 0
-    #
-    # # loop through base page links.
-    # # for link in top_links:
-    # for link in top_links:
-    #     # increment count.
-    #     count_top += 1
-    #
-    #     print("Processing page ", str(count_top),
-    #           " of ", str(len(top_links)))
-    #
-    #     # get the links on the child page.
-    #     links_single_page = obj.get_page_links(
-    #         link, cfg.PAGE_MUST_CONTAIN)
-    #
-    #     # process links on child page.
-    #     for page_link in links_single_page:
-    #
-    #         # get the content of the page as a beautiful
-    #         # soup object.
-    #         bs_content = obj.get_page_content(page_link)
-    #
-    #         # create the experience object.
-    #         obj_exp = create_experience_obj(bs_content)
-    #
-    #         # create the dynamodb object and add record.
-    #         print("Adding: ", obj_exp.title)
-    #         obj_db = DynamoDb()
-    #         obj_db.create_record(obj_exp)
+    # simple counter.
+    count = 0
+
+    # loop through the list of experiences and create objects.
+    for exp in list_exp:
+        obj_exp = Experience()
+        obj_exp.uuid = str(uuid.uuid1())
+        obj_exp.classification = cfg.CLASSIFICATION
+        obj_exp.title = f"{str(count)} - {cfg.BASE_URL}"
+        obj_exp.description = exp
+        list_exp_obj.append(obj_exp)
+        count += 1
+
+    # create the dynamodb object.
+    obj_db = DynamoDb()
+    db_success = obj_db.create_multiple_records(list_exp_obj)
+
+    print(f'db_success: {db_success}')
 
 
 # start the process.
 # scrape_experiences()
+start_time = time.time()
 scrape_experience_alternate()
+print("--- %s seconds ---" % (time.time() - start_time))

@@ -34,7 +34,7 @@ class DynamoDb:
         # add the item.
         table.put_item(
             Item={
-                'id': obj_exp.uuid,
+                'uuid': obj_exp.uuid,
                 'title': obj_exp.title,
                 'classification': obj_exp.classification,
                 'description': obj_exp.description
@@ -42,7 +42,36 @@ class DynamoDb:
         )
 
         # return success here.
-        # TODO: yeah, we're going to need some error trapping.
+        return True
+
+    def create_multiple_records(self, list_obj_exp):
+        """
+        Creates multiple records in Dynamo DB based on the properties
+        of the Experience objects passed to it.
+
+        :param list_obj_exp: List of Experience objects.
+        :return: boolean to indicate success or failure.
+        """
+
+        # create the boto3 object.
+        dynamodb = boto3.resource('dynamodb',
+                                  region_name=cfg.AWS_REGION)
+
+        # set the table from the cfg file.
+        table = dynamodb.Table(cfg.DB_TABLE)
+
+        # loop through the list and add the items.
+        for obj_exp in list_obj_exp:
+            table.put_item(
+                Item={
+                    'uuid': obj_exp.uuid,
+                    'title': obj_exp.title,
+                    'classification': obj_exp.classification,
+                    'description': obj_exp.description
+                }
+            )
+
+        # return success here.
         return True
 
     def read_one_by_id(self, id):
