@@ -4,6 +4,7 @@ from module_scraping import Experience
 import os
 import sys
 import cfg
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -12,8 +13,11 @@ class DynamoDb:
     The purpose of the DynamoDb class is to handle interactions with
     the DynamoDB database. Relies on boto3.
     """
+
     def __init__(self):
-        pass
+        self.dynamodb = boto3.resource('dynamodb',
+                                       region_name=cfg.AWS_REGION)
+        self.table = self.dynamodb.Table(cfg.DB_TABLE)
 
     def create_record(self, obj_exp):
         """
@@ -24,15 +28,8 @@ class DynamoDb:
         :return: boolean to indicate success or failure.
         """
 
-        # create the boto3 object.
-        dynamodb = boto3.resource('dynamodb',
-                                  region_name=cfg.AWS_REGION)
-
-        # set the table from the cfg file.
-        table = dynamodb.Table(cfg.DB_TABLE)
-
         # add the item.
-        table.put_item(
+        self.table.put_item(
             Item={
                 'uuid': obj_exp.uuid,
                 'title': obj_exp.title,
@@ -53,16 +50,9 @@ class DynamoDb:
         :return: boolean to indicate success or failure.
         """
 
-        # create the boto3 object.
-        dynamodb = boto3.resource('dynamodb',
-                                  region_name=cfg.AWS_REGION)
-
-        # set the table from the cfg file.
-        table = dynamodb.Table(cfg.DB_TABLE)
-
         # loop through the list and add the items.
         for obj_exp in list_obj_exp:
-            table.put_item(
+            self.table.put_item(
                 Item={
                     'uuid': obj_exp.uuid,
                     'title': obj_exp.title,
@@ -74,23 +64,19 @@ class DynamoDb:
         # return success here.
         return True
 
-    def read_one_by_id(self, id):
+    def read_one_by_id(self, uuid):
         """
         Retrieves a single record from the dynamodb database
         based on an id. Returns an experience object.
 
-        :param id: id of record as a string.
+        :param uuid: id of record as a string.
         :return: Experience object.
         """
         # object that will be returned.
         obj_return = Experience()
 
-        # create the boto3 object.
-        dynamodb = boto3.resource('dynamodb',
-                                  region_name=cfg.AWS_REGION)
-        table = dynamodb.Table(cfg.DB_TABLE)
-        response = table.query(
-            KeyConditionExpression=Key('id').eq(id)
+        response = self.table.query(
+            KeyConditionExpression=Key('uuid').eq(uuid)
         )
 
         # get the results.
@@ -99,7 +85,7 @@ class DynamoDb:
         # loop through the results but there really
         # should only be one.
         for item in arr_items:
-            obj_return.uuid = item["id"]
+            obj_return.uuid = item["uuid"]
             obj_return.title = item["title"]
             obj_return.description = item["description"]
             obj_return.classification = item["classification"]
@@ -109,19 +95,16 @@ class DynamoDb:
         return obj_return
 
     def delete_by_id(self, record_id):
-
-        # create the boto3 object and set the table.
-        dynamodb = boto3.resource('dynamodb',
-                                  region_name=cfg.AWS_REGION)
-        table = dynamodb.Table(cfg.DB_TABLE)
+        """
+        Deletes a record from the dynamodb database based on an id.
+        :param record_id: id of record as a string.
+        :return: boolean to indicate success or failure.
+        """
 
         # delete the item and get the response.
-        response = table.delete_item(
-            Key={
-                "id": record_id
-            }
+        response = self.table.delete_item(
+            Key={"uuid": record_id}
         )
 
         # return success here.
-        # TODO: yeah, we're going to need some error trapping.
         return True
