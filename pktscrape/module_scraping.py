@@ -27,7 +27,7 @@ class ScrapeSite:
 
     def __init__(self):
         self.links = []
-        self.driver = None
+        self.driver = webdriver.Firefox()
 
     def create_driver(self):
         """
@@ -69,12 +69,10 @@ class ScrapeSite:
 
     def get_page_links(self, url, must_contain=""):
         """
-        Scrapes the page specified upon. Uses
-        selenium since the test site that I used had blocked
-        vanilla scraping.
+        Scrapes the page specified upon. Uses selenium since the
+        test site that I used had blocked scraping.
         :return: links contained on the base page.
         """
-        print('In get_page_links...')
 
         # list to hold cleaned up links.
         links_return = []
@@ -84,8 +82,6 @@ class ScrapeSite:
 
         # loop through just the links on the page.
         for link in archive_links.findAll('a', href=True):
-
-            print(f'Evaluating {link}')
 
             # use value stored in config file to determine if
             # this is a link that we want. This will vary depending
@@ -107,55 +103,8 @@ class ScrapeSite:
                     # add to the list.
                     self.links.append(the_link)
 
-                    # recursively call this function to get the links on the page.
+                    # recursion to get all the links from all the pages.
                     self.get_page_links(the_link, must_contain)
-
-    @staticmethod
-    def get_page_content(url):
-        """
-        Scrapes all the HTML from a specified URL.
-        :param url: The full URL of the page.
-        :return: A BeautifulSoup object.
-        """
-
-        # string to hold response from scraping.
-        scrape_response = ""
-
-        # content parsed into beautiful soup.
-        bs_content = ""
-
-        # try to connect to the site using selenium and firefox.
-        try:
-            # create the firefox driver.
-            driver = webdriver.Firefox()
-            # seems to work better with a slight wait
-            # time.sleep(3)
-
-            # get the page content.
-            driver.get(url)
-
-            # see if the config file has a delay set.
-            # if there is a delay, we will be waiting for an element with a
-            # particular class name to appear.
-            if cfg.WEB_DELAY > 0:
-                WebDriverWait(driver, 20) \
-                    .until(EC.visibility_of_element_located((By.CLASS_NAME,
-                                                             cfg.WEB_ELEMENT_TO_WAIT)))
-
-            # set the response.
-            scrape_response = driver.page_source
-
-            # parse the text with beautiful soup.
-            bs_content = BeautifulSoup(scrape_response, 'html.parser')
-        except:
-            # report error.
-            print("driver failed")
-        finally:
-            # close the browser window.
-            driver.quit()
-
-        # return the beautiful soup object.
-        return bs_content
 
     def crawl_for_links(self, url, must_contain=""):
         """
@@ -164,13 +113,8 @@ class ScrapeSite:
         :param must_contain: The string that must be in the link.
         :return: A list of links from the page.
         """
-        print("Starting crawl for links...")
 
         # list to hold the links pulled from the page.
+        # start with the base URL.
         self.links = [url]
-
         self.get_page_links(url, must_contain)
-
-        # # open the page with selenium.
-        # with webdriver.Firefox() as driver:
-        #     time.sleep(3)

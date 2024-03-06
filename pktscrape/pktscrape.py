@@ -98,6 +98,34 @@ def create_experience_obj(bs_content):
     return exp
 
 
+def experience_objects_from_list(list_content):
+    """
+    Takes a list of strings and creates a list of Experience
+    objects. This will likely need to be adjusted depending
+    on the source of the scraped data.
+
+    :param list_content: list of strings.
+    :return: list of Experience objects.
+    """
+    # list for experience objects.
+    list_exp_obj = []
+
+    # simple counter.
+    count = 0
+
+    # loop through the list of experiences and create objects.
+    for exp in list_content:
+        obj_exp = Experience()
+        obj_exp.uuid = str(uuid.uuid1())
+        obj_exp.classification = cfg.CLASSIFICATION
+        obj_exp.title = f"{str(count)} - {cfg.BASE_URL}"
+        obj_exp.description = exp
+        list_exp_obj.append(obj_exp)
+        count += 1
+
+    return list_exp_obj
+
+
 def scrape_experiences():
     """
     Scrapes the content from the specified url. This function
@@ -152,29 +180,21 @@ def scrape_experiences():
             obj_db.create_record(obj_exp)
 
 
-# alternate scrape
-# crawl pages to gather links.
-# loop through pages and scrape content.
-# create experience objects.
-# save to dynamodb.
 def scrape_experience_alternate():
     """
     Scrapes and chooses the links, then the content, then
     creates the objects, and finally saves to dynamodb.
     """
 
-    print("Scraping the links...")
-
     # create the obj to begin scraping.
     obj = ScrapeSite()
 
-    # create a selenium driver to share.
-    obj.create_driver()
+    print("Scraping the links...")
 
     # crawl the site for links starting at the base page.
     obj.crawl_for_links(cfg.BASE_URL, cfg.BASE_MUST_CONTAIN)
 
-    print(obj.links)
+    print(f"Saved {str(len(obj.links))} links.")
 
     # list to hold experience objects.
     list_exp = []
@@ -185,34 +205,26 @@ def scrape_experience_alternate():
         print(f"Scraping content from {link}...")
         bs_content = obj.scrape_page(link)
 
-        # extract the experiences from the page content and add to the list.
+        # extract the experiences from the page content and add to the list of strings.
         list_exp.extend(extract_experience(bs_content))
 
     # close the driver.
     obj.quit_driver()
-    print(f"Scraped {str(len(list_exp))} experience objects.")
 
-    # list for experience objects.
-    list_exp_obj = []
+    print(f"Scraped {str(len(list_exp))} experiences.")
 
-    # simple counter.
-    count = 0
+    # turn experiences into objects.
+    list_exp_obj = experience_objects_from_list(list_exp)
 
-    # loop through the list of experiences and create objects.
-    for exp in list_exp:
-        obj_exp = Experience()
-        obj_exp.uuid = str(uuid.uuid1())
-        obj_exp.classification = cfg.CLASSIFICATION
-        obj_exp.title = f"{str(count)} - {cfg.BASE_URL}"
-        obj_exp.description = exp
-        list_exp_obj.append(obj_exp)
-        count += 1
-
-    # create the dynamodb object.
+    # create the dynamodb object and create records.
+    print("Adding records to the database...")
     obj_db = DynamoDb()
     db_success = obj_db.create_multiple_records(list_exp_obj)
 
-    print(f'db_success: {db_success}')
+    if db_success:
+        print(f"{str(len(list_exp_obj))} records added to the database.")
+    else:
+        print("There was an error adding records to the database.")
 
 
 # start the process.
