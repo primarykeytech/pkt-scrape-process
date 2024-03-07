@@ -134,3 +134,6 @@ dmypy.json
 
 # sensitive info
 cfg.py
+
+# testing data
+*.csv
