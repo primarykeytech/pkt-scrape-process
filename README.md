@@ -35,6 +35,6 @@ Steps Completed:
 
 TODO:
 + IaC with Terraform.
-+ Processing with Amazon AWS EMR.
++ Processing using PySpark with Amazon AWS EMR.
 + Word cloud creation.
 + Final report.
