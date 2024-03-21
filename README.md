@@ -3,9 +3,10 @@ There are a number of qualitative research studies that gather experiences from 
 evaluation. The purpose of this project is to 
 scrape a collection of experiences from a websites (e.g. a thread in a forum related to the use 
 of a prescription drug), save the information 
-to a NoSQL database, and then utilize Amazon AWS Elastic MapReduce to count the occurrences of 
-words provided within a list of words. The counts are then used to create a word cloud to 
-visualize the data.
+to a NoSQL database, output it from there to a parquet file, and then utilize Amazon AWS 
+Elastic MapReduce to count the occurrences of words provided within a list of words. The counts 
+are then used to create a word cloud to visualize the data. This is obviously not the flow that 
+would be used in real world scenario.
 
 Because of reasons of copyright, this demo project will not provide the website from which 
 the test was conducted. Obviously, each website used would need its own code to handle the 
@@ -34,6 +35,6 @@ Steps Completed:
 
 TODO:
 + IaC with Terraform.
-+ Processing with Amazon AWS EMR.
++ Processing using PySpark with Amazon AWS EMR.
 + Word cloud creation.
 + Final report.
