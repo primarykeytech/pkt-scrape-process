@@ -12,29 +12,29 @@ Because of reasons of copyright, this demo project will not provide the website 
 the test was conducted. Obviously, each website used would need its own code to handle the 
 scraping and processing of content.
  
-This demo project uses:
-+ Python 3.7
-+ Amazon AWS DynamoDB
+## This demo project uses:
++ Python 3.12
++ Amazon AWS DynamoDB (NoSQL database)
 + Apache Spark
 
-Python libraries used:
+## Python libraries used:
 + Beautiful Soup 4.4
-+ Selenium (the test website had blocked the use of vanilla web scraping libraries)
++ Selenium (the test website had blocked the use of web scraping libraries)
 + boto3 (Amazon AWS SDK for Python)
 + PySpark
 
-You will need:
+## Pre-flight setup:
 + A Selenium-compliant driver added to a "drivers" folder. This project used a Firefox 
 driver downloaded from [here](https://github.com/mozilla/geckodriver/releases).
 + A cfg.py file with constants set that are used for configuration and processing. sample_cfg.py 
 is provided showing the constant declarations. 
 
-Steps Completed:
+## Steps Completed:
 + Scraping
 + Writing to DynamoDB
 + Reading from DynamoDB
 + Writing to CSV
 
-TODO:
+## TODO:
 + Processing using PySpark with Amazon AWS EMR.
 + Word cloud creation.
