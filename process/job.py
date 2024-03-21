@@ -15,7 +15,7 @@ def init_spark():
 
 def main():
     spark = init_spark()
-    df = spark.read.csv('online_retail.csv', header=True,escape="\"")
+    df = spark.read.csv('online_retail.csv', header=True, escape="\"")
     df.show()
     print(df.count())
 
