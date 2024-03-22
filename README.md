@@ -34,7 +34,7 @@ is provided showing the constant declarations.
 + Writing to DynamoDB
 + Reading from DynamoDB
 + Writing to CSV
++ Spark job to count occurrences of words
 
 ## TODO:
-+ Processing using PySpark with Amazon AWS EMR.
 + Word cloud creation.

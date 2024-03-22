@@ -17,57 +17,100 @@ def init_spark():
             .config("spark.memory.offHeap.size", "10g").getOrCreate())
 
 
-def main():
+def list_top_words(number_to_include=30):
+    """
+    Creates a list of lists with the top words in order. Two elements: word and count.
+    :return: list with most used words.
+    """
+    # Initialize spark.
     spark = init_spark()
+
+    # Read the csv file into a pandas dataframe.
     df = spark.read.csv(cfg.EXPORT_FILE, header=True, escape="\"")
 
+    # Select just the description column and show just five rows.
     df.select("description").show(5, False)
 
+    # Split the description column into words.
     df.withColumn('word', f.explode(f.split(f.col('description'), ' '))) \
         .groupBy('word') \
         .count() \
         .sort('count', ascending=False) \
-        .show()
 
-    # words = df.select("description").split(" "))
-    # Count the words
-    # word_counts = words.flatMap(lambda x: x).groupBy("value").count()
-    # Print the word counts
-    # word_counts.show()
-    # df.show()
-    # print(df.count())
-
-    # To remove stop words (like "I", "The", ...), we need to provide arrays of words,
-    # not strings. Here we use Apache Spark Tokenizer to do so.
-    # We create a new column to push our arrays of words
+    # Create arrays of words so that we can remove the stop words.
+    # Use Apache Spark Tokenizer to do so.
     tokenizer = Tokenizer(inputCol="description", outputCol="words_token")
     tokenized = tokenizer.transform(df).select('uuid', 'words_token')
 
-    print('############ Tokenized data extract:')
-    tokenized.show()
-
+    # set the stop words using the array in the cfg file along with the
+    # standard stop words in the StopWordsRemover class.
     stop_words = cfg.STOP_WORDS
     stop_words.extend(StopWordsRemover().getStopWords())
     stop_words = list(set(stop_words))
 
-    # Once in arrays, we can use the Apache Spark function StopWordsRemover
-    # A new column "words_clean" is here as an output
+    # Remove the stop words.
     remover = StopWordsRemover(inputCol='words_token', outputCol='words_clean', stopWords=stop_words)
     data_clean = remover.transform(tokenized).select('uuid', 'words_clean')
 
-    print('############ Data Cleaning extract:')
-    data_clean.show()
-
-    # Final step : like in the beginning, we can group again words and sort them by the most used
+    # Sort the words by count.
     result = data_clean.withColumn('word', f.explode(f.col('words_clean'))) \
         .groupBy('word') \
-        .count().sort('count', ascending=False) \
+        .count().sort('count', ascending=False)
 
-    print('############ Top 20 most used words are:')
-    result.show()
+    print('Top used words are:')
+    result.show(number_to_include, False)
 
-    # Stop Spark Process
+    # list_result = result.collect()
+    list_return = []
+
+    # Retrieving multiple rows using collect() and for loop
+    for row in result.collect()[:number_to_include]:
+        row_return = [(row["word"]), row["count"]]
+        list_return.append(row_return)
+
+    # stop spark process.
     spark.stop()
+
+    # return the list.
+    return list_return
+
+
+def build_word_string(top_words):
+    """
+    Builds a string of the top words based on a list of the top
+    words and their counts.
+    :param top_words: list of lists with the top words and counts.
+    :return: str of the top words repeated the number of times based on the count.
+    """
+    # list to hold the words repeated.
+    list_process = []
+
+    # loop through the list and add the word the number
+    # of times based on the count.
+    for row in top_words:
+
+        # loop based on a range of the count.
+        for x in range(row[1]):
+
+            # add the list.
+            list_process.append(row[0])
+
+    # create a string from the list.
+    word_string = " ".join(list_process)
+
+    # return the string.
+    return word_string
+
+
+def main():
+
+    # get the top words.
+    top_words = list_top_words(30)
+
+    # build the string.
+    word_string = build_word_string(top_words)
+
+    # create the word cloud.
 
 
 if __name__ == '__main__':
