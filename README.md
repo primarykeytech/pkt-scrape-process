@@ -18,10 +18,13 @@ scraping and processing of content.
 + Apache Spark
 
 ## Python libraries used:
-+ Beautiful Soup 4.4
++ Beautiful Soup 4
 + Selenium (the test website had blocked the use of web scraping libraries)
 + boto3 (Amazon AWS SDK for Python)
 + PySpark
++ pandas
++ matplotlib
++ wordcloud
 
 ## Pre-flight setup:
 + A Selenium-compliant driver added to a "drivers" folder. This project used a Firefox 
@@ -34,7 +37,11 @@ is provided showing the constant declarations.
 + Writing to DynamoDB
 + Reading from DynamoDB
 + Writing to CSV
-+ Spark job to count occurrences of words
++ Spark job to count occurrences of words from CSV
++ Word cloud creation
+
+![alt text](https://github.com/primarykeytech/pkt-scrape-process/blob/master/public/omep_wordcloud.png?raw=true)
+
 
 ## TODO:
-+ Word cloud creation.
++ Unit tests
