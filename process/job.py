@@ -4,7 +4,8 @@ from pyspark.ml.feature import Tokenizer
 from pyspark.ml.feature import StopWordsRemover
 import os
 import cfg
-
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 def init_spark():
     """
@@ -102,15 +103,32 @@ def build_word_string(top_words):
     return word_string
 
 
+def word_cloud(word_string):
+    """
+    Create a word cloud based on the string of words.
+    :param word_string: str of words.
+    :return: None
+    """
+    # create the word cloud.
+    wordcloud = WordCloud(collocations=False).generate(word_string)
+
+    # Display the generated image:
+    # the matplotlib way:
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.show()
+
+
 def main():
 
     # get the top words.
-    top_words = list_top_words(30)
+    top_words = list_top_words(60)
 
     # build the string.
     word_string = build_word_string(top_words)
 
     # create the word cloud.
+    word_cloud(word_string)
 
 
 if __name__ == '__main__':
