@@ -31,7 +31,15 @@ TEST_SINGLE_PAGE_CONTAINS = '/someword/'
 AWS_REGION = 'your-region'
 DB_TABLE = 'your-dynamodb-table'
 
-# I am using a virtual environment in my IDE, so I needed to set the
-# environment variables here for my AWS credentials.
+# If you are using a virtual environment in your IDE, you may need to set the
+# environment variables here for your AWS credentials.
 os.environ["AWS_SHARED_CREDENTIALS_FILE"] = "<full path to credentials>"
 os.environ["AWS_DEFAULT_PROFILE"] = "<profile name>"
+
+# location and name of csv file exported from dynamodb.
+# we want this in the root of the project.
+EXPORT_FILE = '../exported_dynamo_db.csv'
+
+# extends the stop word list with these words.
+# this prevents words you do not want from appearing in the word cloud.
+STOP_WORDS = ['word1', 'word2']

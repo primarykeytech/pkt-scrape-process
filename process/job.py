@@ -7,6 +7,7 @@ import cfg
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
+
 def init_spark():
     """
     Initialize the spark session.

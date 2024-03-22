@@ -31,6 +31,7 @@ scraping and processing of content.
 driver downloaded from [here](https://github.com/mozilla/geckodriver/releases).
 + A cfg.py file with constants set that are used for configuration and processing. sample_cfg.py 
 is provided showing the constant declarations. 
++ Install packages `pip install -r requirements.txt`
 
 ## Steps Completed:
 + Scraping
@@ -39,7 +40,6 @@ is provided showing the constant declarations.
 + Writing to CSV
 + Spark job to count occurrences of words from CSV
 + Word cloud creation
-
 ![alt text](https://github.com/primarykeytech/pkt-scrape-process/blob/master/public/omep_wordcloud.png?raw=true)
 
 
