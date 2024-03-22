@@ -56,13 +56,13 @@ is provided showing the constant declarations.
 ### Scraping the website:
 
 This step will scrape the website specified in the cfg.py file and save the data 
-to DynamoDB. 
+to DynamoDB.  
 `python pktscrape/scrape.py`
 
 ### Export from DynamoDB to CSV:
 
 This step will read the data from DynamoDB and save all data in the table 
-specified in the cfg file to a CSV file so that it can be processed by Spark.
+specified in the cfg file to a CSV file so that it can be processed by Spark.  
 `python export/csv_maker.py`
 
 ### Running the Spark job:
@@ -72,7 +72,7 @@ of each word in the description column of the CSV file and use that information 
 generate a word cloud. The console will show the counts of each word. A string is 
 then generated based on these counts with each word repeated the number of times 
 based on the count. This string is then used to generate the word cloud image. The 
-word cloud image is displayed by matplotlib.
+word cloud image is displayed by matplotlib.  
 `python process/job.py`
 
 ### Running Tests:
