@@ -50,6 +50,7 @@ is provided showing the constant declarations.
 
 ## TODO:
 + Unit tests
++ Get Moto working for DynamoDB mocking - not currently working.
 
 ## Running the project:
 
