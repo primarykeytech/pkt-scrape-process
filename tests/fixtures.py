@@ -45,3 +45,4 @@ def data_table_with_data(data_table):
     for data in data_set:
         table.put_item(Item=data)
 
+    yield table

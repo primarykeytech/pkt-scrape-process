@@ -2,11 +2,15 @@ import pytest
 from moto import mock_aws
 from pktscrape.module_db import DynamoDb
 from pktscrape.module_scraping import Experience
+from fixtures import data_table, data_table_with_data
 
 
-@mock_aws
-def test_create_record():
-
+def test_create_record(data_table, data_table_with_data):
+    """
+    Test the create_record function.
+    :param data_table: mock table.
+    :param data_table_with_data: mock table with data.
+    """
     # create an object and set the values.
     obj_exp = Experience()
     obj_exp.uuid = "00000000-1111-2222-3333-44444444444444"
@@ -17,9 +21,18 @@ def test_create_record():
     # using db object.
     obj_db = DynamoDb()
 
-    # run the test
-    # assert obj_db.create_record(obj_exp) is True
-    assert type(obj_db) is DynamoDb
+    # overwrite the table with the mock table.
+    obj_db.table = data_table_with_data
+
+    # create the record in the mock table.
+    obj_db.create_record(obj_exp)
+
+    # get the record from the mock table.
+    obj_item = obj_db.read_one_by_id(obj_exp.uuid)
+
+    # run the test to see if the record was created with the object above.
+    assert obj_item.classification == "aspirin"
+
 
 
 # @mock_aws
