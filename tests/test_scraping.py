@@ -1,5 +1,8 @@
 import pytest
-from pktscrape.module_scraping import ScrapeSite
+from bs4 import BeautifulSoup
+
+# from pktscrape.module_scraping import ScrapeSite
+from pktscrape.pktscrape import extract_experience
 import pktscrape.helpers
 import cfg
 
@@ -7,6 +10,25 @@ import cfg
 def test_strip_html():
     # test the strip_html function.
     assert pktscrape.helpers.strip_html('<p>hello</p>') == 'hello'
+
+
+def test_extract_experience():
+    """
+    Test the extract_experience function.
+    """
+    # create a mock content string.
+    mock_content = f"""<div class='{cfg.IDENTIFY_CONTENT}'>test1</div>
+            <div class='{cfg.IDENTIFY_CONTENT}'>test2</div>"
+            <div class='{cfg.IDENTIFY_CONTENT}'>test3</div>"""
+
+    # create a beautifulsoup object.
+    soup = BeautifulSoup(mock_content, "html.parser")
+
+    # run the function.
+    list_content = extract_experience(soup)
+
+    # test the result.
+    assert len(list_content) == 3
 
 
 # def test_scrape_links():

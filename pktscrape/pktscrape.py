@@ -229,6 +229,6 @@ def scrape_experience_alternate():
 
 # start the process.
 # scrape_experiences()
-start_time = time.time()
-scrape_experience_alternate()
-print("--- %s seconds ---" % (time.time() - start_time))
+# start_time = time.time()
+# scrape_experience_alternate()
+# print("--- %s seconds ---" % (time.time() - start_time))
