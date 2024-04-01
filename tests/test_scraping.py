@@ -2,7 +2,8 @@ import pytest
 from bs4 import BeautifulSoup
 
 # from pktscrape.module_scraping import ScrapeSite
-from pktscrape.pktscrape import extract_experience
+from pktscrape.pktscrape import (extract_experience,
+                                 experience_objects_from_list)
 import pktscrape.helpers
 import cfg
 
@@ -29,6 +30,15 @@ def test_extract_experience():
 
     # test the result.
     assert len(list_content) == 3
+
+    list_exp_obj = experience_objects_from_list(list_content)
+
+    assert len(list_exp_obj) == 3
+    assert list_exp_obj[0].description == 'test1'
+
+
+def test_scrape_links():
+    pass
 
 
 # def test_scrape_links():

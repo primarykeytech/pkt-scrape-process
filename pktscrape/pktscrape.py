@@ -180,6 +180,22 @@ def scrape_experiences():
             obj_db.create_record(obj_exp)
 
 
+def add_experiences_to_db(list_exp_obj):
+    """
+    Adds a list of experience objects to the database.
+    :param list_exp_obj: list of Experience objects.
+    """
+    # create the dynamodb object and create records.
+    print("Adding records to the database...")
+    obj_db = DynamoDb()
+    db_success = obj_db.create_multiple_records(list_exp_obj)
+
+    if db_success:
+        print(f"{str(len(list_exp_obj))} records added to the database.")
+    else:
+        print("There was an error adding records to the database.")
+
+
 def scrape_experience_alternate():
     """
     Scrapes and chooses the links, then the content, then
@@ -216,15 +232,8 @@ def scrape_experience_alternate():
     # turn experiences into objects.
     list_exp_obj = experience_objects_from_list(list_exp)
 
-    # create the dynamodb object and create records.
-    print("Adding records to the database...")
-    obj_db = DynamoDb()
-    db_success = obj_db.create_multiple_records(list_exp_obj)
-
-    if db_success:
-        print(f"{str(len(list_exp_obj))} records added to the database.")
-    else:
-        print("There was an error adding records to the database.")
+    # add the experiences to dynamodb.
+    add_experiences_to_db(list_exp_obj)
 
 
 # start the process.

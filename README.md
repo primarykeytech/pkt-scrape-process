@@ -49,8 +49,7 @@ is provided showing the constant declarations.
 + Word cloud creation
 
 ## TODO:
-+ Unit tests
-+ Get Moto working for DynamoDB mocking - not currently working.
++ Additional unit tests
 
 ## Running the project:
 
