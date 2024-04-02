@@ -50,7 +50,11 @@ is provided showing the constant declarations.
 + Word cloud creation
 
 ## TODO:
-+ Additional unit tests
+This is an open-source project. Feel free to contribute.  
+
++ Additional unit tests.
++ Deploy DynamoDB to AWS using Terraform.
++ One step to run all processes.
 
 ## Running the project:
 
