@@ -1,7 +1,7 @@
 # pkt-scrape-process
 There are a number of qualitative research studies that gather experiences from participants for 
 evaluation. The purpose of this project is to 
-scrape a collection of experiences from a websites (e.g. a thread in a forum related to the use 
+scrape a collection of experiences from websites (e.g. a thread in a forum related to the use 
 of a prescription drug), save the information 
 to a NoSQL database, output it from there to a csv file, and then utilize a Spark job to 
 count the occurrences of words provided within a list of words. The counts 
@@ -38,6 +38,7 @@ scraping and processing of content.
 driver downloaded from [here](https://github.com/mozilla/geckodriver/releases).
 + A cfg.py file with constants set that are used for configuration and processing. sample_cfg.py 
 is provided showing the constant declarations. 
++ Add additional words to exclude to the STOP_WORDS list in the cfg.py file.
 + Install packages `pip install -r requirements.txt`
 
 ## Steps Completed:
@@ -77,5 +78,5 @@ word cloud image is displayed by matplotlib.
 
 ### Running Tests:
 
-The unit tests are being refined and improved.
+The unit tests are being refined and improved.  
 `pytest`

@@ -1,11 +1,10 @@
-from unittest.mock import PropertyMock, patch
+from unittest.mock import patch
 import pytest
 from bs4 import BeautifulSoup
 from pktscrape.pktscrape import (extract_experience,
                                  experience_objects_from_list)
 import pktscrape.helpers
 import cfg
-from pktscrape.module_scraping import ScrapeSite
 
 
 def test_strip_html():
@@ -72,41 +71,9 @@ def test_crawl_for_links(mock_class):
     assert len(mock_instance.links) == 3
 
 
-# @patch('pktscrape.module_scraping.ScrapeSite.links',
-#        new_callable=PropertyMock,
-#        return_value=["<a href='http://www.test.com/subpage?1'>test</a>",
-#                      "<a href='http://www.test.com/subpage?2'>test2</a>"])
-# def test_crawl_for_links(mocker):
-#
-#     # fake_response = ["<a href='http://www.test.com/subpage?1'>test</a>",
-#     #                  "<a href='http://www.test.com/subpage?2'>test2</a>"]
-#
-#     # mocker.patch(
-#     #     "pktscrape.module_scraping.ScrapeSite.get_page_links", return_value=fake_response
-#     # )
-#
-#     # with mocker.patch('pktscrape.module_scraping.ScrapeSite.get_page_links',
-#     #                   new_callable=PropertyMock,
-#     #            return_value={'a': 1}):
-#
-#     scraped = ScrapeSite()
-#     scraped.crawl_for_links("<a href='http://www.test.com/'>test</a>", "subpage")
-#
-#     # print(scraped.links)
-#
-#
-#     assert len(scraped.links) == 2
-
-
-    # # Initialize the ScrapeSite class with fresh data.
-    # scraped = ScrapeSite()
-    # scraped.crawl_for_links("<a href='http://www.test.com/'>test</a>", "subpage")
-
-    # print(scraped.links)
-    #
-    # assert len(scraped.links) == 2
-
-
+# These tests were used to test the scraping functions but rely on
+# selenium and a live site.
+# TODO: Replace the following unit tests using mocks
 # def test_scrape_links():
 #     # create the scrapesite object.
 #     scraped = ScrapeSite()

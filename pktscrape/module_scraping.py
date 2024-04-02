@@ -49,17 +49,6 @@ class ScrapeSite:
         :param url: URL of page to scrape.
         :return: List of links from the page.
         """
-        # list to hold the links pulled from the page.
-        archive_links = []
-
-        # open the page with selenium.
-        # with webdriver.Firefox() as driver:
-        #     # time.sleep(3)  # seems to work better with a slight wait
-        #     driver.get(url)
-        #     scrape_response = driver.page_source
-        #     archive_links = BeautifulSoup(scrape_response, 'html.parser')
-        #     driver.quit()
-
         self.driver.get(url)
         scrape_response = self.driver.page_source
         archive_links = BeautifulSoup(scrape_response, 'html.parser')
