@@ -69,8 +69,8 @@ class ScrapeSite:
 
     def get_page_links(self, url, must_contain=""):
         """
-        Scrapes the page specified upon. Uses selenium since the
-        test site that I used had blocked scraping.
+        Recursive function that scrapes the page specified upon.
+        Uses selenium since the test site that I used had blocked scraping.
         :return: links contained on the base page.
         """
 

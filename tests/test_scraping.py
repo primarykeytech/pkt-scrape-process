@@ -1,11 +1,11 @@
+from unittest.mock import PropertyMock, patch
 import pytest
 from bs4 import BeautifulSoup
-
-# from pktscrape.module_scraping import ScrapeSite
 from pktscrape.pktscrape import (extract_experience,
                                  experience_objects_from_list)
 import pktscrape.helpers
 import cfg
+from pktscrape.module_scraping import ScrapeSite
 
 
 def test_strip_html():
@@ -37,8 +37,74 @@ def test_extract_experience():
     assert list_exp_obj[0].description == 'test1'
 
 
-def test_scrape_links():
-    pass
+@patch('pktscrape.module_scraping.ScrapeSite')
+def test_crawl_for_links(mock_class):
+    """
+    Test the crawl_for_links method. We are mocking the ScrapeSite class since the
+    method sets class properties.
+    :param mock_class: Used to create the mock ScrapeSite class.
+    """
+
+    # intended to be the initial url.
+    url = "<a href='https://www.primarykeytech.com/'>PKT HOME</a>"
+
+    # Create a mock instance of the class
+    mock_instance = mock_class.return_value
+
+    def side_effect(url):
+        """
+        Side effect to set the links property.
+        :return: Array of links that would be set by the method.
+        """
+        mock_instance.links = [f"{url}",
+                               "<a href='https://www.primarykeytech.com/subpage?1'>test</a>",
+                               "<a href='https://www.primarykeytech.com/subpage?2'>test2</a>"]
+        return mock_instance.links
+
+    # Set expectation for crawl_for_links method using the
+    # side_effect function above. This sets the links property.
+    mock_instance.crawl_for_links.side_effect = side_effect
+
+    # Call the method on the mock instance
+    mock_instance.crawl_for_links(url)
+
+    # Test the result.
+    assert len(mock_instance.links) == 3
+
+
+# @patch('pktscrape.module_scraping.ScrapeSite.links',
+#        new_callable=PropertyMock,
+#        return_value=["<a href='http://www.test.com/subpage?1'>test</a>",
+#                      "<a href='http://www.test.com/subpage?2'>test2</a>"])
+# def test_crawl_for_links(mocker):
+#
+#     # fake_response = ["<a href='http://www.test.com/subpage?1'>test</a>",
+#     #                  "<a href='http://www.test.com/subpage?2'>test2</a>"]
+#
+#     # mocker.patch(
+#     #     "pktscrape.module_scraping.ScrapeSite.get_page_links", return_value=fake_response
+#     # )
+#
+#     # with mocker.patch('pktscrape.module_scraping.ScrapeSite.get_page_links',
+#     #                   new_callable=PropertyMock,
+#     #            return_value={'a': 1}):
+#
+#     scraped = ScrapeSite()
+#     scraped.crawl_for_links("<a href='http://www.test.com/'>test</a>", "subpage")
+#
+#     # print(scraped.links)
+#
+#
+#     assert len(scraped.links) == 2
+
+
+    # # Initialize the ScrapeSite class with fresh data.
+    # scraped = ScrapeSite()
+    # scraped.crawl_for_links("<a href='http://www.test.com/'>test</a>", "subpage")
+
+    # print(scraped.links)
+    #
+    # assert len(scraped.links) == 2
 
 
 # def test_scrape_links():
