@@ -1,136 +1,51 @@
-from pyspark.sql import SparkSession
+"""Spark profile for larger exports; the offline demo does not require Spark."""
+
+import argparse
+from pathlib import Path
+
 import pyspark.sql.functions as f
-from pyspark.ml.feature import Tokenizer
-from pyspark.ml.feature import StopWordsRemover
-import os
-import cfg
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
+from pyspark.ml.feature import StopWordsRemover, Tokenizer
+from pyspark.sql import SparkSession
 
 
-def init_spark():
-    """
-    Initialize the spark session.
-    :return: SparkSession
-    """
-    return (SparkSession.builder
-            .appName("pkt-scrape-process")
-            .config("spark.memory.offHeap.enabled", "true")
-            .config("spark.memory.offHeap.size", "10g").getOrCreate())
+def init_spark() -> SparkSession:
+    return SparkSession.builder.appName("pkt-scrape-process").getOrCreate()
 
 
-def list_top_words(number_to_include=30):
-    """
-    Creates a list of lists with the top words in order. Two elements: word and count.
-    :return: list with most used words.
-    """
-    # Initialize spark.
+def list_top_words(input_path: str | Path, *, number_to_include: int = 30,
+                   extra_stop_words: list[str] | None = None, spark: SparkSession | None = None):
+    """Return only the requested top rows; do not collect an unbounded result."""
+    # ``getOrCreate`` can reuse a default session even when no active session is
+    # reported.  This library function therefore never owns or stops a session.
+    spark = spark or SparkSession.getActiveSession() or init_spark()
+    try:
+        path = str(input_path)
+        df = spark.read.parquet(path) if path.endswith(".parquet") else spark.read.csv(path, header=True, escape='"')
+        tokenizer = Tokenizer(inputCol="description", outputCol="words_token")
+        tokenized = tokenizer.transform(df).select("uuid", "words_token")
+        stop_words = list(set((extra_stop_words or []) + StopWordsRemover().getStopWords()))
+        cleaned = StopWordsRemover(inputCol="words_token", outputCol="words_clean", stopWords=stop_words).transform(tokenized)
+        rows = (cleaned.withColumn("word", f.explode("words_clean"))
+                .groupBy("word").count().orderBy(f.desc("count")).limit(number_to_include).collect())
+        return [(row["word"], row["count"]) for row in rows]
+    finally:
+        # Callers that create a session are responsible for closing it.
+        pass
+
+
+def main() -> None:
+    """Standalone Spark entry point; it explicitly owns the session it creates."""
+    parser = argparse.ArgumentParser(description="List the most frequent words in a CSV or Parquet export")
+    parser.add_argument("input_path", type=Path)
+    parser.add_argument("--limit", type=int, default=30)
+    args = parser.parse_args()
     spark = init_spark()
-
-    # Read the csv file into a pandas dataframe.
-    df = spark.read.csv(cfg.EXPORT_FILE, header=True, escape="\"")
-
-    # Select just the description column and show just five rows.
-    df.select("description").show(5, False)
-
-    # Split the description column into words.
-    df.withColumn('word', f.explode(f.split(f.col('description'), ' '))) \
-        .groupBy('word') \
-        .count() \
-        .sort('count', ascending=False) \
-
-    # Create arrays of words so that we can remove the stop words.
-    # Use Apache Spark Tokenizer to do so.
-    tokenizer = Tokenizer(inputCol="description", outputCol="words_token")
-    tokenized = tokenizer.transform(df).select('uuid', 'words_token')
-
-    # set the stop words using the array in the cfg file along with the
-    # standard stop words in the StopWordsRemover class.
-    stop_words = cfg.STOP_WORDS
-    stop_words.extend(StopWordsRemover().getStopWords())
-    stop_words = list(set(stop_words))
-
-    # Remove the stop words.
-    remover = StopWordsRemover(inputCol='words_token', outputCol='words_clean', stopWords=stop_words)
-    data_clean = remover.transform(tokenized).select('uuid', 'words_clean')
-
-    # Sort the words by count.
-    result = data_clean.withColumn('word', f.explode(f.col('words_clean'))) \
-        .groupBy('word') \
-        .count().sort('count', ascending=False)
-
-    print('Top used words are:')
-    result.show(number_to_include, False)
-
-    # list_result = result.collect()
-    list_return = []
-
-    # Retrieving multiple rows using collect() and for loop
-    for row in result.collect()[:number_to_include]:
-        row_return = [(row["word"]), row["count"]]
-        list_return.append(row_return)
-
-    # stop spark process.
-    spark.stop()
-
-    # return the list.
-    return list_return
+    try:
+        for word, count in list_top_words(args.input_path, number_to_include=args.limit, spark=spark):
+            print(f"{word}\t{count}")
+    finally:
+        spark.stop()
 
 
-def build_word_string(top_words):
-    """
-    Builds a string of the top words based on a list of the top
-    words and their counts.
-    :param top_words: list of lists with the top words and counts.
-    :return: str of the top words repeated the number of times based on the count.
-    """
-    # list to hold the words repeated.
-    list_process = []
-
-    # loop through the list and add the word the number
-    # of times based on the count.
-    for row in top_words:
-
-        # loop based on a range of the count.
-        for x in range(row[1]):
-
-            # add the list.
-            list_process.append(row[0])
-
-    # create a string from the list.
-    word_string = " ".join(list_process)
-
-    # return the string.
-    return word_string
-
-
-def word_cloud(word_string):
-    """
-    Create a word cloud based on the string of words.
-    :param word_string: str of words.
-    :return: None
-    """
-    # create the word cloud.
-    wordcloud = WordCloud(collocations=False).generate(word_string)
-
-    # Display the generated image:
-    # the matplotlib way:
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis("off")
-    plt.show()
-
-
-def main():
-
-    # get the top words.
-    top_words = list_top_words(60)
-
-    # build the string.
-    word_string = build_word_string(top_words)
-
-    # create the word cloud.
-    word_cloud(word_string)
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

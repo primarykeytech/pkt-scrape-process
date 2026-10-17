@@ -1,86 +1,65 @@
 # pkt-scrape-process
-There are a number of qualitative research studies that gather experiences from participants for 
-evaluation. The purpose of this project is to 
-scrape a collection of experiences from websites (e.g. a thread in a forum related to the use 
-of a prescription drug), save the information 
-to a NoSQL database, output it from there to a csv file, and then utilize a Spark job to 
-count the occurrences of words provided within a list of words. The counts 
-are then used to create a word cloud to visualize the data. This is obviously not the flow that 
-would be used in real world scenario.
 
-Each step is intentionally run individually to show the processes of scraping, saving, reading, 
-and processing the data. 
+An offline-first, explainable data-pipeline demonstration. It shows synthetic HTML ingestion,
+typed records, DynamoDB-style storage, CSV/Parquet export, bounded Spark analysis, and a word
+cloud—without scraping a live site or requiring AWS credentials.
 
-Because of reasons of copyright, this demo project will not provide the website from which 
-the test was conducted. Obviously, each website used would need its own code to handle the 
-scraping and processing of content.
+## Quick start (offline and safe)
 
-![word cloud sample](https://github.com/primarykeytech/pkt-scrape-process/blob/master/public/omep_wordcloud.png?raw=true)
+Python 3.12+ is required. Create a virtual environment and install the project:
 
- 
-## This demo project uses:
-+ Python 3.12
-+ Amazon AWS DynamoDB (NoSQL database)
-+ Apache Spark
+```powershell
+python -m pip install -e ".[dev]"
+python -m pktscrape demo --output artifacts/demo
+```
 
-## Python libraries used:
-+ Beautiful Soup 4
-+ Selenium (the test website had blocked the use of web scraping libraries)
-+ boto3 (Amazon AWS SDK for Python)
-+ PySpark
-+ pandas
-+ matplotlib
-+ wordcloud
-+ pytest
+The base install is the complete offline demo. Spark is deliberately optional:
+`python -m pip install -e ".[spark]"`. It also requires a compatible JDK and is not needed for
+the command above.
 
-## Pre-flight setup:
-+ A Selenium-compliant driver added to a "drivers" folder. This project used a Firefox 
-driver downloaded from [here](https://github.com/mozilla/geckodriver/releases).
-+ A cfg.py file with constants set that are used for configuration and processing. sample_cfg.py 
-is provided showing the constant declarations. 
-+ Add additional words to exclude to the STOP_WORDS list in the cfg.py file.
-+ Install packages `pip install -r requirements.txt`
+The command uses only built-in synthetic HTML and Moto's in-memory DynamoDB simulation. It creates:
 
-## Steps Completed:
-+ Scraping
-+ Writing to DynamoDB
-+ Reading from DynamoDB
-+ Writing to CSV
-+ Spark job to count occurrences of words from CSV
-+ Word cloud creation
+- `experiences.csv`
+- `experiences.parquet`
+- `wordcloud.png`
 
-## TODO:
-This is an open-source project. Feel free to contribute.  
+Run the verification suite with `pytest -q`. The end-to-end test covers HTML -> typed records ->
+Moto DynamoDB -> CSV/Parquet -> PNG.
 
-+ Additional unit tests.
-+ Deploy DynamoDB to AWS using Terraform.
-+ One step to run all processes.
+## Architecture
 
-## Running the project:
+`pktscrape.sources` owns approved input adapters; `models` defines the `Experience` record;
+`storage` contains the DynamoDB adapter; `exporter` writes portable files; and `analysis` builds the
+small local visualization. `process/job.py` remains the optional Spark profile: it accepts either CSV
+or Parquet and limits results before collecting them.
 
-### Scraping the website:
+## Live collection policy
 
-This step will scrape the website specified in the cfg.py file and save the data 
-to DynamoDB.  
-`python pktscrape/scrape.py`
+The default demo never uses a browser or network. The retained Selenium adapter is opt-in only and
+has a same-host boundary, a 50-page cap, a 30-second page timeout, and explicit cleanup. Before using
+it, obtain permission for the target site and review its terms, robots policy, rate limits, copyright,
+and data-handling obligations. Do not use the legacy medical-review CSV as demonstration input.
 
-### Export from DynamoDB to CSV:
+## Optional AWS infrastructure
 
-This step will read the data from DynamoDB and save all data in the table 
-specified in the cfg file to a CSV file so that it can be processed by Spark.  
-`python export/csv_maker.py`
+`infrastructure/` is a **non-production** Terraform example only. It creates an encrypted,
+on-demand DynamoDB table and a narrowly scoped writer policy; it does not attach that policy to any
+identity. Review the plan before applying:
 
-### Running the Spark job:
+```powershell
+cd infrastructure
+terraform init
+terraform plan
+# only after choosing an AWS account and explicit approval:
+terraform apply
+# remove every resource created by the stack:
+terraform destroy
+```
 
-Once the CSV file is generated, the Spark job can be run to count the occurrences 
-of each word in the description column of the CSV file and use that information to 
-generate a word cloud. The console will show the counts of each word. A string is 
-then generated based on these counts with each word repeated the number of times 
-based on the count. This string is then used to generate the word cloud image. The 
-word cloud image is displayed by matplotlib.  
-`python process/job.py`
+No AWS resources are created by the application, tests, or CI.
 
-### Running Tests:
+## Development
 
-The unit tests are being refined and improved.  
-`pytest`
+Dependencies and tool configuration are in `pyproject.toml`; CI runs Ruff and pytest on Python 3.13.
+The existing `requirements.txt` is retained as an old environment snapshot, not the supported install
+path.

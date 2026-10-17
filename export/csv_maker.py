@@ -1,5 +1,6 @@
 import boto3
 import pandas as pd
+
 import cfg
 
 
@@ -81,7 +82,7 @@ def main():
     if build_exported_csv(items):
         print(f"Exported data to: {cfg.EXPORT_FILE}")
     else:
-        print(f"Export of data failed.")
+        print("Export of data failed.")
 
 
 if __name__ == '__main__':

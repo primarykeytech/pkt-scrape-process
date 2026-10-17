@@ -137,3 +137,18 @@ cfg.py
 
 # testing data
 *.csv
+
+# Terraform runtime state and downloaded providers (keep .terraform.lock.hcl)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Build and generated local demo artifacts
+artifacts/
+*.egg-info/
+
+# Terraform providers and plugins
+infrastructure/.terraform/providers/*
+infrastructure/.terraform/plugins/*

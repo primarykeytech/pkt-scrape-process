@@ -1,109 +1,67 @@
+"""Legacy Selenium adapter, kept separate from the offline default demo."""
+
+from urllib.parse import urlparse
+
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import cfg
 
+from .models import Experience
+from .sources import approved_links
 
-class Experience:
-    """
-    Objects created with the Experience class will be used
-    to save the content in DynamoDB.
-    """
-
-    def __init__(self):
-        self.uuid = ""
-        self.title = ""
-        self.classification = ""
-        self.description = ""
+__all__ = ["Experience", "ScrapeSite"]
 
 
 class ScrapeSite:
-    """
-    ScrapeSite handles all the site scraping and cleaning
-    of data related to the scraping.
-    """
+    """Bounded browser collector for an explicitly approved single host."""
 
-    def __init__(self):
-        self.links = []
-        self.driver = webdriver.Firefox()
+    def __init__(self, *, driver=None, max_pages: int = 50):
+        self.links: list[str] = []
+        self.driver = driver
+        self.max_pages = max_pages
 
-    def create_driver(self):
-        """
-        Creates a new Firefox driver.
-        :return: None
-        """
-        self.driver = webdriver.Firefox()
+    def create_driver(self) -> None:
+        if self.driver is None:
+            self.driver = webdriver.Firefox()
 
-    def quit_driver(self):
-        """
-        Quits the Firefox driver.
-        :return: None
-        """
-        self.driver.quit()
+    def quit_driver(self) -> None:
+        if self.driver is not None:
+            self.driver.quit()
+            self.driver = None
 
-    def scrape_page(self, url):
-        """
-        Use selenium to scrape the page.
-        :param url: URL of page to scrape.
-        :return: List of links from the page.
-        """
+    def scrape_page(self, url: str) -> BeautifulSoup:
+        self.create_driver()
+        self.driver.set_page_load_timeout(30)
         self.driver.get(url)
-        scrape_response = self.driver.page_source
-        archive_links = BeautifulSoup(scrape_response, 'html.parser')
+        requested = urlparse(url)
+        final_url = getattr(self.driver, "current_url", url)
+        final = urlparse(final_url)
+        if final.scheme not in {"http", "https"} or final.hostname != requested.hostname:
+            raise ValueError("Browser navigation left the approved host")
+        self._last_page_url = final_url
+        return BeautifulSoup(self.driver.page_source, "html.parser")
 
-        # return the links.
-        return archive_links
+    def get_page_links(self, url: str, must_contain: str = "") -> list[str]:
+        """Extract links from one page; never recurses or leaves the starting host."""
+        try:
+            return approved_links(str(self.scrape_page(url)), page_url=self._last_page_url, required_text=must_contain,
+                                  allowed_host=urlparse(url).hostname or "")
+        finally:
+            self.quit_driver()
 
-    def get_page_links(self, url, must_contain=""):
-        """
-        Recursive function that scrapes the page specified upon.
-        Uses selenium since the test site that I used had blocked scraping.
-        :return: links contained on the base page.
-        """
-
-        # list to hold cleaned up links.
-        links_return = []
-
-        # open the page with selenium.
-        archive_links = self.scrape_page(url)
-
-        # loop through just the links on the page.
-        for link in archive_links.findAll('a', href=True):
-
-            # use value stored in config file to determine if
-            # this is a link that we want. This will vary depending
-            # on the page from which we scrape.
-            if must_contain in link['href']:
-                # set the link.
-                the_link = link['href']
-
-                # if the link is not a full URL, add the base URL.
-                if 'http' not in the_link:
-                    the_link = cfg.HOME_URL + the_link
-
-                # check if the link is already in the list
-                # to return.
-                if the_link not in self.links:
-
-                    print(f'Adding {the_link} to the list...')
-
-                    # add to the list.
-                    self.links.append(the_link)
-
-                    # recursion to get all the links from all the pages.
-                    self.get_page_links(the_link, must_contain)
-
-    def crawl_for_links(self, url, must_contain=""):
-        """
-        Crawls the site for links.
-        :param url: The URL to use as the starting point.
-        :param must_contain: The string that must be in the link.
-        :return: A list of links from the page.
-        """
-
-        # list to hold the links pulled from the page.
-        # start with the base URL.
-        self.links = [url]
-        self.get_page_links(url, must_contain)
+    def crawl_for_links(self, url: str, must_contain: str = "") -> list[str]:
+        """Breadth-first crawl with a host boundary and a hard page limit."""
+        allowed_host = urlparse(url).hostname or ""
+        queue = [url]
+        self.links = []
+        try:
+            while queue and len(self.links) < self.max_pages:
+                page = queue.pop(0)
+                if page in self.links:
+                    continue
+                self.links.append(page)
+                page_links = approved_links(str(self.scrape_page(page)), page_url=self._last_page_url,
+                                            required_text=must_contain, allowed_host=allowed_host)
+                queue.extend(link for link in page_links if link not in self.links and link not in queue)
+            return self.links
+        finally:
+            self.quit_driver()
