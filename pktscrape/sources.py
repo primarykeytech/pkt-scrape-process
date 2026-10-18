@@ -4,6 +4,7 @@ The default demo source is intentionally offline.  Live browser collection is an
 opt-in adapter and callers must supply the source policy explicitly.
 """
 
+import json
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
@@ -24,7 +25,7 @@ class OfflineHtmlSource:
         soup = BeautifulSoup(self.html, "html.parser")
         return [
             Experience.from_content(
-                record_id=element.get("data-record-id", f"{self.title}:{index}"),
+                record_id=json.dumps([self.title, element.get("data-record-id", str(index))], separators=(",", ":")),
                 title=self.title,
                 classification=self.classification,
                 description=element.get_text(" ", strip=True),

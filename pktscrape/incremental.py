@@ -48,11 +48,11 @@ def classify(previous, incoming):
     return new, changed, unchanged
 
 
-def run_incremental_demo(output_dir: str | Path, html: str, *, fail_before_pointer: bool = False, fail_after_pointer: bool = False) -> IncrementalResult:
+def run_incremental_demo(output_dir: str | Path, html: str, *, source_id: str = "offline-fixture", provenance: dict | None = None, fail_before_pointer: bool = False, fail_after_pointer: bool = False) -> IncrementalResult:
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     previous = _previous(output)
-    incoming = OfflineHtmlSource(html, classification="synthetic-demo", content_class="experience", title="offline fixture").experiences()
+    incoming = OfflineHtmlSource(html, classification="synthetic-demo", content_class="experience", title=source_id).experiences()
     new, changed, unchanged = classify(previous, incoming)
     # Missing input IDs are retained: this is delta ingestion, not snapshot mirroring.
     next_records = previous | {item.uuid: item for item in new + changed}
@@ -67,7 +67,7 @@ def run_incremental_demo(output_dir: str | Path, html: str, *, fail_before_point
     try:
         export_records(persisted, generation)
         write_word_cloud(top_words(persisted), generation / "wordcloud.png")
-        (generation / "state.json").write_text(json.dumps({"records": {k:v.to_item() for k,v in next_records.items()}}, indent=2))
+        (generation / "state.json").write_text(json.dumps({"records": {k:v.to_item() for k,v in next_records.items()}, "provenance": provenance or {}}, indent=2))
         if fail_before_pointer:
             raise RuntimeError("simulated failure before pointer publication")
         temporary = output / "current.tmp"

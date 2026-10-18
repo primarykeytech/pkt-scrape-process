@@ -46,6 +46,12 @@ boundaries, and recovery from partial failures. It does **not** claim exactly-on
 real crawler, DynamoDB, and filesystem: production systems need durable source offsets, conditional
 writes/transactions where supported, reconciliation, and a single-writer lock or coordination policy.
 
+## Saved raw inputs and replay
+
+`python -m pktscrape capture-demo --raw-root artifacts/raw` saves immutable UTF-8 HTML bytes and a manifest with batch ID, stable source ID/URL, UTC capture time, SHA-256, and capture parser version. Replay it without scraping: `python -m pktscrape replay artifacts/raw/<batch-id> --output artifacts/incremental-demo`.
+
+Replay validates the manifest path and content hash before processing; a missing or corrupt input leaves the current published snapshot unchanged. Capture provenance remains immutable while replay records the current parser version separately. Semantic records are reproducible from retained bytes, but run timestamps and later parser changes are intentionally distinct. Retain or manually clean old batches according to your data policy; this demo never deletes them automatically.
+
 ## Architecture
 
 `pktscrape.sources` owns approved input adapters; `models` defines the `Experience` record;
