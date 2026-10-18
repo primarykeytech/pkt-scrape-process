@@ -30,21 +30,21 @@ Moto DynamoDB -> CSV/Parquet -> PNG.
 
 Run `python -m pktscrape incremental-demo --output artifacts/incremental-demo` twice. The first run
 reports `new=3 changed=0 unchanged=0 records=3`; the second reports
-`new=0 changed=0 unchanged=3 records=3`. The demo's `.incremental-state.json` is intentional local
-state: Moto is recreated for each command, then restored from this checkpoint.
+`new=0 changed=0 unchanged=3 records=3`. The demo publishes a `current.json` pointer to one immutable
+generation directory; Moto is recreated for each command and rehydrated from that generation's state.
 
-Each record has a stable `record_id` (the `uuid` field for backward compatibility) based on its source
-position, and a separate deterministic SHA-256 `content_hash`. A rerun classifies records as new,
-changed, or unchanged; only new and changed records are upserted. This avoids duplicate records and
-unnecessary writes while still detecting content revisions. The pipeline writes CSV, Parquet, and PNG
-to a temporary staging directory, atomically replaces the published artifacts only after all succeed,
-then advances the checkpoint. A failure before publication leaves the last good output and checkpoint
+Each fixture entity supplies a stable `record_id` (the `uuid` field for backward compatibility), independent
+of list position, and a separate deterministic SHA-256 `content_hash`. A rerun classifies records as new,
+changed, or unchanged; only new and changed records are application upserts. Moto rehydration writes are
+simulation setup, not application writes. Missing IDs are retained (delta ingestion, not snapshot mirroring).
+The pipeline writes CSV, Parquet, PNG, and state into an immutable generation, then atomically advances
+the one `current.json` pointer. A failure before pointer publication leaves the last good generation
 in place; retrying converges to the same output as a clean successful run.
 
 This demonstrates idempotent processing, content-based change detection, bounded publication
 boundaries, and recovery from partial failures. It does **not** claim exactly-once delivery across a
 real crawler, DynamoDB, and filesystem: production systems need durable source offsets, conditional
-writes/transactions where supported, and operational reconciliation.
+writes/transactions where supported, reconciliation, and a single-writer lock or coordination policy.
 
 ## Architecture
 

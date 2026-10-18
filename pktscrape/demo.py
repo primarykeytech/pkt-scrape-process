@@ -12,9 +12,9 @@ from .storage import DynamoExperienceRepository
 
 SYNTHETIC_HTML = """
 <article>
-  <div class="experience">The sample participant found the workflow clear and calm.</div>
-  <div class="experience">A second synthetic participant found the workflow clear and useful.</div>
-  <div class="experience">This offline example uses no personal or scraped content.</div>
+  <div class="experience" data-record-id="fixture:a">The sample participant found the workflow clear and calm.</div>
+  <div class="experience" data-record-id="fixture:b">A second synthetic participant found the workflow clear and useful.</div>
+  <div class="experience" data-record-id="fixture:c">This offline example uses no personal or scraped content.</div>
 </article>
 """
 

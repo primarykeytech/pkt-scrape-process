@@ -1,5 +1,4 @@
-"""Incremental, restart-safe local demonstration pipeline."""
-
+"""Incremental local demo with immutable published generations."""
 import json
 import os
 import shutil
@@ -23,67 +22,62 @@ class IncrementalResult:
     changed: int
     unchanged: int
     records: int
+    application_writes: int
 
 
-def _load_checkpoint(path: Path) -> dict[str, Experience]:
-    if not path.exists():
+def current_snapshot(output_dir: str | Path) -> Path | None:
+    pointer = Path(output_dir) / "current.json"
+    return Path(json.loads(pointer.read_text())["generation"]) if pointer.exists() else None
+
+
+def _previous(output: Path) -> dict[str, Experience]:
+    snapshot = current_snapshot(output)
+    if not snapshot:
         return {}
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    return {record_id: Experience(**item) for record_id, item in payload["records"].items()}
+    return {key: Experience(**value) for key, value in json.loads((snapshot / "state.json").read_text())["records"].items()}
 
 
-def _write_checkpoint(path: Path, records: dict[str, Experience]) -> None:
-    temporary = path.with_suffix(".tmp")
-    temporary.write_text(json.dumps({"records": {key: value.to_item() for key, value in records.items()}}, indent=2), encoding="utf-8")
-    os.replace(temporary, path)
-
-
-def classify(previous: dict[str, Experience], incoming: list[Experience]) -> tuple[list[Experience], list[Experience], list[Experience]]:
+def classify(previous, incoming):
+    ids = [item.uuid for item in incoming]
+    if len(ids) != len(set(ids)):
+        raise ValueError("incoming record IDs must be unique")
     new, changed, unchanged = [], [], []
-    for record in incoming:
-        old = previous.get(record.uuid)
-        if old is None:
-            new.append(record)
-        elif old.content_hash == record.content_hash:
-            unchanged.append(record)
-        else:
-            changed.append(record)
+    for item in incoming:
+        old = previous.get(item.uuid)
+        (new if old is None else unchanged if old.content_hash == item.content_hash else changed).append(item)
     return new, changed, unchanged
 
 
-def run_incremental_demo(output_dir: str | Path, html: str, *, fail_before_publish: bool = False) -> IncrementalResult:
-    """Process synthetic HTML and atomically publish only a fully successful run.
-
-    Moto is intentionally ephemeral; the JSON checkpoint makes separate CLI
-    invocations incremental.  It is a local checkpoint, not a cross-system
-    exactly-once guarantee.
-    """
+def run_incremental_demo(output_dir: str | Path, html: str, *, fail_before_pointer: bool = False, fail_after_pointer: bool = False) -> IncrementalResult:
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
-    checkpoint = output / ".incremental-state.json"
-    previous = _load_checkpoint(checkpoint)
+    previous = _previous(output)
     incoming = OfflineHtmlSource(html, classification="synthetic-demo", content_class="experience", title="offline fixture").experiences()
     new, changed, unchanged = classify(previous, incoming)
-    next_records = previous | {record.uuid: record for record in new + changed}
-
+    # Missing input IDs are retained: this is delta ingestion, not snapshot mirroring.
+    next_records = previous | {item.uuid: item for item in new + changed}
     with mock_aws():
-        table = boto3.resource("dynamodb", region_name="us-east-1").create_table(
-            TableName="pkt-scrape-demo", KeySchema=[{"AttributeName": "uuid", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "uuid", "AttributeType": "S"}], BillingMode="PAY_PER_REQUEST"
-        )
-        repository = DynamoExperienceRepository(table=table)
-        repository.save_many(next_records.values())
-        persisted = repository.list_all()
-
-    staging = output / f".staging-{uuid.uuid4().hex}"
+        table = boto3.resource("dynamodb", region_name="us-east-1").create_table(TableName="pkt-scrape-demo", KeySchema=[{"AttributeName":"uuid","KeyType":"HASH"}], AttributeDefinitions=[{"AttributeName":"uuid","AttributeType":"S"}], BillingMode="PAY_PER_REQUEST")
+        repo = DynamoExperienceRepository(table=table)
+        repo.save_many(previous.values())  # ephemeral Moto rehydration, not application upserts
+        repo.save_many(new + changed)
+        persisted = repo.list_all()
+    generation = output / "generations" / uuid.uuid4().hex
+    generation.mkdir(parents=True)
     try:
-        csv_path, parquet_path = export_records(persisted, staging)
-        image_path = write_word_cloud(top_words(persisted), staging / "wordcloud.png")
-        if fail_before_publish:
-            raise RuntimeError("simulated failure before publication")
-        for artifact in (csv_path, parquet_path, image_path):
-            os.replace(artifact, output / artifact.name)
-        _write_checkpoint(checkpoint, next_records)
-    finally:
-        shutil.rmtree(staging, ignore_errors=True)
-    return IncrementalResult(len(new), len(changed), len(unchanged), len(next_records))
+        export_records(persisted, generation)
+        write_word_cloud(top_words(persisted), generation / "wordcloud.png")
+        (generation / "state.json").write_text(json.dumps({"records": {k:v.to_item() for k,v in next_records.items()}}, indent=2))
+        if fail_before_pointer:
+            raise RuntimeError("simulated failure before pointer publication")
+        temporary = output / "current.tmp"
+        pointer = output / "current.json"
+        temporary.write_text(json.dumps({"generation": str(generation)}))
+        os.replace(temporary, pointer)
+        if fail_after_pointer:
+            raise RuntimeError("simulated failure after pointer publication")
+    except Exception:
+        if current_snapshot(output) != generation:
+            shutil.rmtree(generation, ignore_errors=True)
+        raise
+    return IncrementalResult(len(new), len(changed), len(unchanged), len(next_records), len(new) + len(changed))

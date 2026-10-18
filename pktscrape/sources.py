@@ -24,8 +24,8 @@ class OfflineHtmlSource:
         soup = BeautifulSoup(self.html, "html.parser")
         return [
             Experience.from_content(
-                record_id=f"{self.title}:{index}",
-                title=f"{index} - {self.title}",
+                record_id=element.get("data-record-id", f"{self.title}:{index}"),
+                title=self.title,
                 classification=self.classification,
                 description=element.get_text(" ", strip=True),
             )
