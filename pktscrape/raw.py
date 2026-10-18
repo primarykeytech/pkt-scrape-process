@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .incremental import IncrementalResult, run_incremental_demo
+from .quality import QualityPolicy
 
 PARSER_VERSION = "html-experience-v1"
 SCHEMA_VERSION = "raw-batch-v1"
@@ -32,20 +33,37 @@ def capture_batch(
         "encoding": "utf-8",
         "input_path": "input.html",
         "content_sha256": hashlib.sha256(raw).hexdigest(),
-        "capture_parser_version": parser_version, "schema_version": SCHEMA_VERSION,
+        "capture_parser_version": parser_version,
+        "schema_version": SCHEMA_VERSION,
     }
     (batch / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return batch
 
 
 def replay_batch(
-    batch_dir: str | Path, output_dir: str | Path, *, parser_version: str = PARSER_VERSION
+    batch_dir: str | Path,
+    output_dir: str | Path,
+    *,
+    parser_version: str = PARSER_VERSION,
+    policy: QualityPolicy | None = None,
 ) -> IncrementalResult:
     batch = Path(batch_dir).resolve()
     manifest_path = batch / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    required = {"batch_id": str, "source_id": str, "source_url": str, "captured_at_utc": str, "encoding": str, "input_path": str, "content_sha256": str, "capture_parser_version": str, "schema_version": str}
-    if manifest.get("schema_version") != SCHEMA_VERSION or any(not isinstance(manifest.get(k), typ) or not manifest[k] for k, typ in required.items()):
+    required = {
+        "batch_id": str,
+        "source_id": str,
+        "source_url": str,
+        "captured_at_utc": str,
+        "encoding": str,
+        "input_path": str,
+        "content_sha256": str,
+        "capture_parser_version": str,
+        "schema_version": str,
+    }
+    if manifest.get("schema_version") != SCHEMA_VERSION or any(
+        not isinstance(manifest.get(k), typ) or not manifest[k] for k, typ in required.items()
+    ):
         raise ValueError("invalid raw batch manifest")
     if manifest["encoding"].lower() != "utf-8":
         raise ValueError("raw batches are UTF-8 only")
@@ -63,4 +81,19 @@ def replay_batch(
     raw = candidate.read_bytes()
     if hashlib.sha256(raw).hexdigest() != manifest["content_sha256"]:
         raise ValueError("raw input hash mismatch")
-    return run_incremental_demo(output_dir, raw.decode(manifest["encoding"]), source_id=manifest["source_id"], provenance={"batch_id": manifest["batch_id"], "source_id": manifest["source_id"], "capture_parser_version": manifest["capture_parser_version"], "replay_parser_version": parser_version, "schema_version": SCHEMA_VERSION})
+    return run_incremental_demo(
+        output_dir,
+        raw.decode(manifest["encoding"]),
+        source_id=manifest["source_id"],
+        policy=policy,
+        provenance={
+            "batch_id": manifest["batch_id"],
+            "source_id": manifest["source_id"],
+            "source_url": manifest["source_url"],
+            "content_sha256": manifest["content_sha256"],
+            "input_path": manifest["input_path"],
+            "capture_parser_version": manifest["capture_parser_version"],
+            "replay_parser_version": parser_version,
+            "schema_version": SCHEMA_VERSION,
+        },
+    )

@@ -23,16 +23,31 @@ class OfflineHtmlSource:
 
     def experiences(self) -> list[Experience]:
         soup = BeautifulSoup(self.html, "html.parser")
-        return [
-            Experience.from_content(
-                record_id=json.dumps([self.title, element.get("data-record-id", str(index))], separators=(",", ":")),
-                title=self.title,
-                classification=self.classification,
-                description=element.get_text(" ", strip=True),
+        records = []
+        for index, element in enumerate(soup.find_all("div", class_=self.content_class), start=1):
+            record_id = json.dumps(
+                [self.title, element.get("data-record-id", str(index))], separators=(",", ":")
             )
-            for index, element in enumerate(soup.find_all("div", class_=self.content_class), start=1)
-            if element.get_text(" ", strip=True)
-        ]
+            description = element.get_text(" ", strip=True)
+            try:
+                records.append(
+                    Experience.from_content(
+                        record_id=record_id,
+                        title=self.title,
+                        classification=self.classification,
+                        description=description,
+                    )
+                )
+            except ValueError:
+                records.append(
+                    Experience(
+                        uuid=record_id,
+                        title=self.title,
+                        classification=self.classification,
+                        description=description,
+                    )
+                )
+        return records
 
 
 def approved_links(html: str, *, page_url: str, required_text: str, allowed_host: str) -> list[str]:

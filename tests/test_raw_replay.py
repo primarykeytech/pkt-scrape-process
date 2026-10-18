@@ -52,6 +52,20 @@ def test_missing_or_absolute_input_is_rejected_before_replay(tmp_path):
         replay_batch(batch, tmp_path / "out")
 
 
+def test_unknown_manifest_schema_is_fatal_before_replay(tmp_path):
+    batch = capture_batch(tmp_path / "raw", HTML, source_url="x", source_id="a")
+    output = tmp_path / "out"
+    replay_batch(batch, output)
+    before = current_snapshot(output)
+    manifest_path = batch / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["schema_version"] = "raw-batch-v999"
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="invalid raw batch manifest"):
+        replay_batch(batch, output)
+    assert current_snapshot(output) == before
+
+
 def test_two_sources_with_same_source_record_id_do_not_collide(tmp_path):
     first = capture_batch(tmp_path / "raw", HTML, source_url="x", source_id="source-a")
     second = capture_batch(tmp_path / "raw", HTML, source_url="y", source_id="source-b")

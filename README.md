@@ -48,9 +48,15 @@ writes/transactions where supported, reconciliation, and a single-writer lock or
 
 ## Saved raw inputs and replay
 
-`python -m pktscrape capture-demo --raw-root artifacts/raw` saves immutable UTF-8 HTML bytes and a manifest with batch ID, stable source ID/URL, UTC capture time, SHA-256, and capture parser version. Replay it without scraping: `python -m pktscrape replay artifacts/raw/<batch-id> --output artifacts/incremental-demo`.
+`python -m pktscrape capture-demo --raw-root artifacts/raw` saves immutable UTF-8 HTML bytes and a manifest with batch ID, stable source ID/URL, UTC capture time, SHA-256, and capture parser version. Replay it without scraping: `python -m pktscrape replay artifacts/raw/<batch-id> --output artifacts/incremental-demo`. Replay accepts the same `--rejection-threshold` option as `incremental-demo`.
 
 Replay validates the manifest path and content hash before processing; a missing or corrupt input leaves the current published snapshot unchanged. Capture provenance remains immutable while replay records the current parser version separately. Semantic records are reproducible from retained bytes, but run timestamps and later parser changes are intentionally distinct. Retain or manually clean old batches according to your data policy; this demo never deletes them automatically.
+
+## Data-quality gates and rejected records
+
+The versioned `quality-v1` policy validates required fields, unique stable IDs, a documented description-length bound, and rejects an empty candidate batch. Duplicate IDs quarantine every occurrence, so an invalid first occurrence cannot make a later one appear unique. Run the default gate with `python -m pktscrape incremental-demo`; its rejection threshold is zero, so any rejected record blocks publication and preserves the current generation. A batch with zero accepted records is always fatal, even if its rejection threshold is higher. Inspect machine-readable diagnostics in `quality-failures/` for reason codes, batch rejection reason, raw-record references, accepted/rejected counts, and raw-batch provenance (source URL, byte hash, and input path). For a deliberately accepted mixed batch, use `--rejection-threshold 1`: valid records publish while rejected records remain visible in the diagnostic file. Correct the input and rerun; incremental IDs and hashes converge without duplicates.
+
+Raw manifest/schema/hash/path failures are fatal before parsing and quarantine because their integrity cannot be trusted. This small contract makes quality decisions explicit, keeps rejected evidence visible, reconciles accepted/rejected counts, and prevents a bad batch replacing a good snapshot. It is not a complete production data-quality system; a real service also needs source-specific schema evolution and operational review.
 
 ## Architecture
 
