@@ -23,7 +23,8 @@ class OfflineHtmlSource:
     def experiences(self) -> list[Experience]:
         soup = BeautifulSoup(self.html, "html.parser")
         return [
-            Experience.create(
+            Experience.from_content(
+                record_id=f"{self.title}:{index}",
                 title=f"{index} - {self.title}",
                 classification=self.classification,
                 description=element.get_text(" ", strip=True),
