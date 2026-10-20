@@ -58,6 +58,29 @@ The versioned `quality-v1` policy validates required fields, unique stable IDs, 
 
 Raw manifest/schema/hash/path failures are fatal before parsing and quarantine because their integrity cannot be trusted. This small contract makes quality decisions explicit, keeps rejected evidence visible, reconciles accepted/rejected counts, and prevents a bad batch replacing a good snapshot. It is not a complete production data-quality system; a real service also needs source-specific schema evolution and operational review.
 
+## SQL analytics over the published snapshot
+
+DuckDB provides a small, read-only SQL layer over the accepted `experiences.parquet` file in the one generation selected by `current.json`:
+
+```powershell
+python -m pktscrape incremental-demo --output artifacts/incremental-demo
+python -m pktscrape analytics --output artifacts/incremental-demo
+```
+
+The JSON report includes `records`, distinct record IDs and content hashes, average description length, and up to 20 per-`classification` aggregates. It also returns the stored quality result and raw-replay provenance when available, plus `publication_state_filesystem_mtime_utc`: the UTC filesystem modification time of immutable `state.json`. Equivalent SQL over the loaded `experiences` relation is:
+
+```sql
+SELECT classification, count(*) AS records,
+       count(DISTINCT content_hash) AS distinct_contents,
+       round(avg(length(description)), 2) AS average_description_characters
+FROM experiences
+GROUP BY classification
+ORDER BY records DESC, classification
+LIMIT 20;
+```
+
+Resolving the pointer once prevents one report mixing Parquet from one generation with provenance from another. The layer is in-memory and never writes the pipeline artifacts; failed or quarantined records are absent because only an accepted published generation exports Parquet. It is intentionally a compact reporting interface, not a multi-user warehouse, semantic model, or source-freshness service: the filesystem modification time is not a publication timestamp, predates pointer publication, and can change if a generation is copied or restored. Source-capture timing is available only when replay provenance was stored.
+
 ## Architecture
 
 `pktscrape.sources` owns approved input adapters; `models` defines the `Experience` record;
