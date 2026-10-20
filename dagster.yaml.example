@@ -1,0 +1,7 @@
+# Copy this file to $env:DAGSTER_HOME/dagster.yaml for the local OSS demo.
+# It keeps run history and compute logs under DAGSTER_HOME and opts out of
+# Dagster's anonymous telemetry for this local demonstration.
+telemetry:
+  enabled: false
+nux:
+  enabled: false

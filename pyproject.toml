@@ -13,6 +13,7 @@ dependencies = ["beautifulsoup4>=4.12,<5", "boto3>=1.34,<2", "duckdb>=1.4,<2", "
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "ruff>=0.6,<1"]
 spark = ["pyspark>=3.5,<5"]
+dagster = ["dagster>=1.13,<1.14", "dagster-webserver>=1.13,<1.14", "filelock>=3,<5"]
 
 [project.scripts]
 pkt-scrape = "pktscrape.__main__:main"

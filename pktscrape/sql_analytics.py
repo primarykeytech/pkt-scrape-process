@@ -93,6 +93,14 @@ def _state(snapshot: Path) -> dict:
 def analyze_published_snapshot(output_dir: str | Path) -> SnapshotAnalytics:
     """Query accepted records from the generation selected by ``current.json`` once."""
     snapshot = _published_generation(output_dir)
+    return analyze_snapshot(snapshot)
+
+
+def analyze_snapshot(snapshot: str | Path) -> SnapshotAnalytics:
+    """Query one already-resolved immutable published generation."""
+    snapshot = Path(snapshot).resolve()
+    if not snapshot.is_dir():
+        raise ValueError("published snapshot generation is invalid")
     state = _state(snapshot)
     parquet = snapshot / "experiences.parquet"
     if not parquet.is_file():

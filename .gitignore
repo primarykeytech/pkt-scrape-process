@@ -147,6 +147,7 @@ crash.*.log
 
 # Build and generated local demo artifacts
 artifacts/
+.dagster/
 *.egg-info/
 
 # Terraform providers and plugins

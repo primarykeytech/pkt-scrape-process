@@ -81,12 +81,54 @@ LIMIT 20;
 
 Resolving the pointer once prevents one report mixing Parquet from one generation with provenance from another. The layer is in-memory and never writes the pipeline artifacts; failed or quarantined records are absent because only an accepted published generation exports Parquet. It is intentionally a compact reporting interface, not a multi-user warehouse, semantic model, or source-freshness service: the filesystem modification time is not a publication timestamp, predates pointer publication, and can change if a generation is copied or restored. Source-capture timing is available only when replay provenance was stored.
 
+## Optional local Dagster orchestration
+
+The optional `dagster` extra adds the open-source Dagster OSS UI and a small asset graph. It uses no
+Dagster+ account or cloud service, never crawls a live site, and reuses the existing saved-raw,
+`replay_batch`, quality-gated publication, Parquet, and DuckDB functions rather than creating a second
+pipeline implementation.
+
+```powershell
+python -m pip install -e ".[dev,dagster]"
+$env:DAGSTER_HOME = "$PWD\.dagster"
+New-Item -ItemType Directory -Force $env:DAGSTER_HOME
+Copy-Item dagster.yaml.example "$env:DAGSTER_HOME\dagster.yaml"
+dagster dev -m pktscrape.dagster_defs --host 127.0.0.1 --port 3000
+```
+
+Open `http://127.0.0.1:3000`, select **Materialize all**, and inspect the asset graph and run logs. The
+assets are `saved_raw_batch` -> `quality_gated_publication` -> `accepted_parquet` ->
+`duckdb_analytics_report`. A quality failure stops the downstream Parquet and analytics assets, while
+the diagnostics written by the existing quality gate remain available. For a terminal-only safe rerun,
+run the command below twice; the second replay creates a new immutable generation while reporting
+unchanged accepted records rather than duplicates:
+
+```powershell
+dagster asset materialize -m pktscrape.dagster_defs --select "*"
+```
+
+`daily_offline_demo` is provided only as a visible scheduling example and starts **stopped**. Enable it
+deliberately in the local UI only after choosing a single-writer policy. The asset graph uses a host-local
+file lock around replay and verifies that the published generation's raw batch ID matches its upstream
+asset before handing that exact generation path to Parquet and DuckDB. This prevents concurrent Dagster
+runs from racing locally and prevents downstream analytics from silently resolving a newer `current.json`.
+Do not run this local graph concurrently with the standalone incremental/replay CLI; the lock cannot
+coordinate writers on another host.
+
+`DAGSTER_HOME` stores local run history, event logs, and compute logs in the ignored `.dagster/` directory.
+The supplied `dagster.yaml.example` sets `telemetry.enabled: false` and disables the new-user prompt for
+this demo; copy it before starting the UI. Stop the local UI and daemon with `Ctrl+C`; no remote process,
+schedule, or cloud resource is created. Dagster is useful here to demonstrate visible asset lineage,
+failure boundaries, and local run history, but it is not a distributed scheduler, durable multi-host lock,
+or production observability deployment.
+
 ## Architecture
 
 `pktscrape.sources` owns approved input adapters; `models` defines the `Experience` record;
 `storage` contains the DynamoDB adapter; `exporter` writes portable files; and `analysis` builds the
-small local visualization. `process/job.py` remains the optional Spark profile: it accepts either CSV
-or Parquet and limits results before collecting them.
+small local visualization. `sql_analytics` reads a resolved Parquet generation with DuckDB;
+`dagster_defs` is the optional local asset graph. `process/job.py` remains the optional Spark profile:
+it accepts either CSV or Parquet and limits results before collecting them.
 
 ## Live collection policy
 
