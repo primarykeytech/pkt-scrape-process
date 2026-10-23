@@ -1,0 +1,5 @@
+# Python 3.12 Windows profile input for the portable offline demonstration.
+# It installs the local project and constrains resolution with the captured snapshot.
+# It is not a fully reproducible, hash-locked artifact set.
+-c verified-py312-windows.txt
+..

@@ -1,0 +1,5 @@
+# Optional local orchestration profile; it does not install Spark.
+-r base.txt
+dagster==1.13.26
+dagster-webserver==1.13.26
+filelock==4.2.4

@@ -13,9 +13,11 @@ python -m pip install -e ".[dev]"
 python -m pktscrape demo --output artifacts/demo
 ```
 
-The base install is the complete offline demo. Spark is deliberately optional:
-`python -m pip install -e ".[spark]"`. It also requires a compatible JDK and is not needed for
-the command above.
+The base install is the complete offline demo. Spark is deliberately optional and is not needed for
+the command above. The target supported combination is Python 3.12, PySpark 3.5.1, and Java 17 (CI).
+Apache Spark 3.5 documents Java 8u371+, 11, or 17 and Python 3.8+; Java 17 is the maintained local
+default here. The legacy Windows Java 8u503 runtime can start a Spark session, but the full worker and
+Parquet verification is intentionally not claimed until it runs on JDK 17.
 
 The command uses only built-in synthetic HTML and Moto's in-memory DynamoDB simulation. It creates:
 
@@ -127,8 +129,9 @@ or production observability deployment.
 `pktscrape.sources` owns approved input adapters; `models` defines the `Experience` record;
 `storage` contains the DynamoDB adapter; `exporter` writes portable files; and `analysis` builds the
 small local visualization. `sql_analytics` reads a resolved Parquet generation with DuckDB;
-`dagster_defs` is the optional local asset graph. `process/job.py` remains the optional Spark profile:
-it accepts either CSV or Parquet and limits results before collecting them.
+`dagster_defs` is the optional local asset graph. `pktscrape.spark_job` (also available as
+`pkt-scrape-spark`) is the optional Spark profile: it accepts either CSV or Parquet and limits results
+before collecting them. `process/job.py` is retained as a compatibility wrapper.
 
 ## Live collection policy
 
@@ -160,3 +163,41 @@ No AWS resources are created by the application, tests, or CI.
 Dependencies and tool configuration are in `pyproject.toml`; CI runs Ruff and pytest on Python 3.13.
 The existing `requirements.txt` is retained as an old environment snapshot, not the supported install
 path.
+
+### Reproducible installation profiles
+
+`requirements/verified-py312-windows.txt` is the resolved Python 3.12 Windows constraints set captured
+from the local verification environment. It is intentionally platform-specific; CI resolves its Linux
+environment separately. It records exact versions but has no artifact hashes or build-tool lock, so it
+is a constraints snapshot rather than a fully reproducible lock. The profile inputs keep optional
+features out of the base installation:
+
+```powershell
+# From the repository root
+python -m pip install -r requirements/base.txt
+python -m pip install -r requirements/dev.txt       # adds pytest and Ruff
+python -m pip install -r requirements/spark.txt     # adds only PySpark
+python -m pip install -r requirements/dagster.txt   # adds only Dagster OSS
+```
+
+For the optional Spark profile, install a JDK 17 and set `JAVA_HOME` only for the shell or virtual
+environment where Spark is run. Check it before running Spark:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-17"
+& "$env:JAVA_HOME\bin\java.exe" -version
+pkt-scrape-spark verify --output artifacts/spark-verification
+```
+
+`verify` uses a local `local[2]` session, writes a synthetic source Parquet dataset, runs the bounded
+word-count transform, writes and reads a result Parquet dataset, checks the expected values, and stops
+the session in `finally`. It refuses an existing output path so it cannot delete a user's artifacts.
+For analysis of an existing local export, run
+`pkt-scrape-spark top-words path\to\experiences.parquet --limit 30`.
+
+The CI Spark job runs the same tests and then builds a wheel, installs that wheel into a fresh virtual
+environment outside the checkout, and executes `verify`. This has been added to the workflow; its remote
+result is not claimed until GitHub Actions runs it. The pinned PySpark 3.5.1 combination is deliberately
+kept separate from current Spark 4.x: upgrade it only after repeating this JVM and wheel verification.
+The JVM-dependent test is opt-in locally: use `$env:RUN_SPARK_TESTS = "1"; pytest -q
+tests/test_spark_job.py` after configuring a supported JDK.

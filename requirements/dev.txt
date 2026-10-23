@@ -1,0 +1,4 @@
+# Developer tooling only; the base installation stays free of test tooling.
+-r base.txt
+pytest==8.0.2
+ruff==0.17.1

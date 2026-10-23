@@ -12,3 +12,27 @@ jobs:
       - run: python -m pip install -e ".[dev]"
       - run: ruff check .
       - run: pytest -q
+  spark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: python -m pip install --upgrade pip
+      # Keep the main job lightweight while executing the optional JVM profile here.
+      - run: python -m pip install -e ".[dev,spark]"
+      - run: RUN_SPARK_TESTS=1 pytest -q tests/test_spark_job.py
+      - run: python -m pip wheel --no-deps --wheel-dir wheelhouse .
+      - run: python -m venv "$RUNNER_TEMP/pkt-spark-wheel"
+      - run: "$RUNNER_TEMP/pkt-spark-wheel/bin/python" -m pip install --upgrade pip
+      - run: >-
+          "$RUNNER_TEMP/pkt-spark-wheel/bin/python" -m pip install
+          wheelhouse/*.whl pyspark==3.5.1
+      - run: >-
+          "$RUNNER_TEMP/pkt-spark-wheel/bin/pkt-scrape-spark" verify
+          --output "$RUNNER_TEMP/pkt-spark-wheel-verification"
+        working-directory: ${{ runner.temp }}

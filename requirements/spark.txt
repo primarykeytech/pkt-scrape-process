@@ -1,0 +1,3 @@
+# Optional local Spark profile; it is not installed by the base or Dagster paths.
+-r base.txt
+pyspark==3.5.1
