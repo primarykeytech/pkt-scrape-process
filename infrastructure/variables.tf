@@ -6,11 +6,8 @@ variable "project_name" {
   type    = string
   default = "pkt-scrape"
 }
-variable "environment" {
-  type = string
-  default = "demo"
-  validation {
-    condition     = var.environment != "prod"
-    error_message = "This demonstration stack must not use prod."
-  }
+variable "kms_key_arn" {
+  description = "The ARN of the KMS key to use for DynamoDB encryption."
+  type        = string
+  default     = null
 }

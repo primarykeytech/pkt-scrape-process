@@ -4,23 +4,34 @@ terraform {
 }
 provider "aws" { region = var.aws_region }
 resource "aws_dynamodb_table" "experiences" {
-  name = "${var.project_name}-${var.environment}-experiences"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key = "uuid"
+  name           = "${var.project_name}-${var.environment}-experiences"
+  billing_mode  = "PAY_PER_REQUEST"
+  hash_key       = "uuid"
   attribute {
     name = "uuid"
     type = "S"
   }
-  point_in_time_recovery { enabled = true }
-  server_side_encryption { enabled = true }
-  tags = { Project = var.project_name, Environment = var.environment, ManagedBy = "Terraform" }
+  point_in_time_recovery {
+    enabled = true
+  }
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = var.kms_key_arn != null ? var.kms_key_arn : null
+  }
+  tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
 }
+
 data "aws_iam_policy_document" "writer" {
   statement {
-    actions   = ["dynamodb:PutItem", "dynamodb:GetItem"]
+    actions   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"]
     resources = [aws_dynamodb_table.experiences.arn]
   }
 }
+
 resource "aws_iam_policy" "writer" {
   name   = "${var.project_name}-${var.environment}-writer"
   policy = data.aws_iam_policy_document.writer.json
