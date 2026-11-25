@@ -4,7 +4,7 @@ terraform {
 }
 provider "aws" { region = var.aws_region }
 resource "aws_dynamodb_table" "experiences" {
-  name           = "${var.project_name}-${var.environment}-experiences"
+  name           = "${var.name_prefix}-${var.environment}-experiences"
   billing_mode  = "PAY_PER_REQUEST"
   hash_key       = "uuid"
   attribute {
@@ -19,9 +19,12 @@ resource "aws_dynamodb_table" "experiences" {
     kms_key_arn = var.kms_key_arn != null ? var.kms_key_arn : null
   }
   tags = {
-    Project     = var.project_name
-    Environment = var.environment
-    ManagedBy   = "Terraform"
+    Project      = var.project_name
+    Environment  = var.environment
+    ManagedBy    = "Terraform"
+    Owner         = var.owner
+    CostCenter   = var.cost_center
+    NamePrefix   = var.name_prefix
   }
 }
 
@@ -33,6 +36,6 @@ data "aws_iam_policy_document" "writer" {
 }
 
 resource "aws_iam_policy" "writer" {
-  name   = "${var.project_name}-${var.environment}-writer"
+  name   = "${var.name_prefix}-${var.environment}-writer"
   policy = data.aws_iam_policy_document.writer.json
 }
